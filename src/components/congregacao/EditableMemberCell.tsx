@@ -67,14 +67,22 @@ export function EditableMemberCell({
       ref={containerRef}
       className="w-full cursor-pointer"
       onClick={() => {
-        if (!isEditing && !isReadOnly) {
-          setIsEditing(true);
-          setTimeout(() => setPopoverOpen(true), 50);
-          requestAnimationFrame(() => {
-             if (inputRef.current) {
-                inputRef.current.focus();
-             }
-          });
+        if (!isReadOnly) {
+          if (currentMemberId) {
+            // If there's a member, trigger the substitution modal flow
+            // We pass the current memberId up via onMemberSelect.
+            // The handling in ScheduleTable and ScheduleDisplay will open the modal.
+            onMemberSelect(currentMemberId);
+          } else if (!isEditing) {
+            // If no member and not already editing, start editing to select one.
+            setIsEditing(true);
+            setTimeout(() => setPopoverOpen(true), 50);
+            requestAnimationFrame(() => {
+               if (inputRef.current) {
+                  inputRef.current.focus();
+               }
+            });
+          }
         }
       }}
       onBlur={(e) => {
@@ -162,11 +170,19 @@ export function EditableMemberCell({
           </PopoverContent>
         </Popover>
       ) : (
-        // Display mode
-        <span className={cn(
+        // Display mode - Add onClick here to also trigger for the span
+        <span
+           className={cn(
            "text-sm",
            !selectedMemberName && "text-muted-foreground italic"
-        )}>{selectedMemberName || placeholder}</span>
+        )}
+           onClick={() => {
+             if (!isReadOnly && currentMemberId) {
+                // Also handle click on the displayed member name to open modal
+                 onMemberSelect(currentMemberId);
+             }
+           }}
+        >{selectedMemberName || placeholder}</span>
       )}
     </div>
   );

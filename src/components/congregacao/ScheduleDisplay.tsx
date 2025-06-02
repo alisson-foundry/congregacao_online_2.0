@@ -263,35 +263,21 @@ export function ScheduleDisplay({
       realFunctionId
     });
 
-    if (tableTitle === 'Áudio/Vídeo (AV)') {
-      if (finalized) {
-        // If finalized is true, it means a selection was made in EditableMemberCell dropdown.
-        // We should directly assign the member.
-        console.log('ScheduleDisplay - Direct assignment from EditableMemberCell dropdown. Calling onDirectAssignAV with:', { date, realFunctionId, memberIdOrNewMemberId });
-        onDirectAssignAV(date, realFunctionId, memberIdOrNewMemberId, null);
-      } else {
-        // If finalized is false, it means a regular click on the cell (not from dropdown selection).
-        // We should open the member selection dialog.
-        console.log('ScheduleDisplay - AV cell clicked (not from dropdown). Opening member selection dialog for:', { date, realFunctionId, columnKey, memberIdOrNewMemberId });
-        onOpenAVMemberSelectionDialog(date, realFunctionId, columnKey, memberIdOrNewMemberId);
-      }
+    if (memberIdOrNewMemberId) {
+      const details: SubstitutionDetails = {
+        date: date,
+        functionId: realFunctionId,
+        originalMemberId: memberIdOrNewMemberId,
+        originalMemberName: memberNameOrNewMemberName || 'Membro',
+        currentFunctionGroupId: tableTitle,
+      };
+      onOpenSubstitutionModal(details);
     } else {
-      if (memberIdOrNewMemberId) {
-         const details: SubstitutionDetails = {
-             date: date,
-             functionId: realFunctionId,
-             originalMemberId: memberIdOrNewMemberId,
-             originalMemberName: memberNameOrNewMemberName || 'Membro',
-             currentFunctionGroupId: tableTitle,
-         };
-         onOpenSubstitutionModal(details);
-      } else {
-        toast({
-          title: "Atenção",
-          description: "Selecione um membro primeiro.",
-          variant: "default"
-        });
-      }
+      toast({
+        title: "Atenção",
+        description: "Selecione um membro primeiro.",
+        variant: "default"
+      });
     }
   };
 
