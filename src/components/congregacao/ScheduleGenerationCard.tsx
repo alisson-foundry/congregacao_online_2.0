@@ -12,13 +12,14 @@ import { MemberSelectionDialog } from './MemberSelectionDialog';
 import { useToast } from "@/hooks/use-toast";
 import { AlertTriangle, Loader2, UserPlus, Info } from 'lucide-react';
 import { getPermissaoRequerida, formatarDataCompleta } from '@/lib/congregacao/utils';
+import { generateSchedulePdf } from '@/lib/congregacao/pdf-generator';
 
 interface AVSelectionContext {
   dateStr: string;
   functionId: string;
   columnKey: string;
   currentMemberId: string | null;
-  requiredPermissionId: string | null;
+  requiredPermissionId: string | null | undefined;
 }
 
 interface ScheduleGenerationCardProps {
@@ -120,8 +121,9 @@ export function ScheduleGenerationCard({
     });
   
     for (const weekKey of Array.from(weeksComReuniao)) {
-      const weeklyData = currentSchedule[weekKey];
-      if (!weeklyData || !weeklyData.limpezaSemanalResponsavel || weeklyData.limpezaSemanalResponsavel.trim() === '') {
+      const weeklyData = currentSchedule?.[weekKey];
+      const responsavelSemanal: string | null = weeklyData?.limpezaSemanalResponsavel ?? null;
+      if (!weeklyData || responsavelSemanal === null || responsavelSemanal.trim() === '') {
           return false;
       }
     }
@@ -168,7 +170,7 @@ export function ScheduleGenerationCard({
     const targetDate = new Date(dateStr + "T00:00:00");
     const tipoReuniao = targetDate.getUTCDay() === DIAS_REUNIAO.meioSemana ? 'meioSemana' : 'publica';
     const funcDef = FUNCOES_DESIGNADAS.find(f => f.id === functionId);
-    const requiredPermissionId = funcDef?.permissaoRequeridaBase
+    const requiredPermissionId: string | null | undefined = funcDef?.permissaoRequeridaBase
         ? getPermissaoRequerida(funcDef.id, tipoReuniao)
         : null;
 
@@ -188,6 +190,22 @@ export function ScheduleGenerationCard({
     setAVSelectionContext(null);
   };
 
+  const handleExportPDF = async () => {
+    if (!currentSchedule || currentMes === null || currentAno === null) {
+      toast({ title: "Erro", description: "Nenhum cronograma gerado para exportar.", variant: "destructive" });
+      return;
+    }
+    setIsLoading(true);
+    try {
+      await generateSchedulePdf(currentSchedule, membros, currentMes, currentAno);
+      toast({ title: "Sucesso", description: "PDF gerado com sucesso!", variant: "default" });
+    } catch (e) {
+      console.error("Erro ao gerar PDF:", e);
+      toast({ title: "Erro", description: "Falha ao gerar PDF. Verifique o console.", variant: "destructive" });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const currentYearValue = new Date().getFullYear();
   const yearsForSelect = Array.from({ length: 5 }, (_, i) => currentYearValue - 2 + i);
@@ -304,6 +322,9 @@ export function ScheduleGenerationCard({
                   </Button>
                   <Button onClick={onFinalizeSchedule} disabled={!currentSchedule || isLoading || !allRequiredFieldsFilled}>
                     Finalizar e Salvar Mês
+                  </Button>
+                  <Button onClick={handleExportPDF} disabled={!currentSchedule || isLoading}>
+                    Gerar PDF
                   </Button>
                 </div>
               )}

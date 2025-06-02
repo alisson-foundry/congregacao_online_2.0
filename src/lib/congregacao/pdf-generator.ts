@@ -224,10 +224,10 @@ export function generateSchedulePdf(
 
   // Title (only on the first page)
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(18);
+  doc.setFontSize(16);
   doc.setTextColor(0, 0, 0);
   doc.text(mainTitleText, pageWidth / 2, currentY, { align: 'center' });
-  currentY += 18 * 0.7 + 30;
+  currentY += 16 * 0.7 + 15;
 
   // Filter dates that are meeting days (Thursday or Sunday) and have content
   const meetingDates = Object.keys(schedule)
@@ -236,137 +236,252 @@ export function generateSchedulePdf(
 
   // --- Indicadores Table ---
   if (meetingDates.length > 0) {
-    // Check and add page if needed before drawing section title
-    checkAndAddPage(14 * 0.7 + 10); // Height needed for section title + space
-
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(14);
+    doc.setFontSize(11);
     doc.text('Indicadores', margin, currentY);
-    currentY += 14 * 0.7 + 10;
+    currentY += 11 * 0.7 + 3;
 
-    const indicadoresHeaders = [['Data', 'Indicador 1', 'Indicador 2']];
+    const indicadoresHeaders = [['Data', 'Indicador Externo', 'Indicador Palco']];
     const indicadoresData = meetingDates.map(date => {
       const dateStr = formatarDataCompleta(date);
       const assignments = schedule[dateStr];
+      const diaSemana = date.getUTCDay();
+      const dataDisplay = `${date.getUTCDate()} ${NOMES_DIAS_SEMANA_ABREV[diaSemana]}`;
       return [
-        formatarDataCompleta(date),
-        getMemberNamePdfLocal(assignments?.['indicador1']),
-        getMemberNamePdfLocal(assignments?.['indicador2'])
+        dataDisplay,
+        getMemberNamePdfLocal(assignments?.indicadorExternoId),
+        getMemberNamePdfLocal(assignments?.indicadorPalcoId),
       ];
     });
 
-    const result = (doc as any).autoTable({
+    doc.autoTable({
+      startY: currentY,
       head: indicadoresHeaders,
       body: indicadoresData,
-      startY: currentY,
-      margin: { left: margin },
       theme: 'grid',
-      styles: { fontSize: 10 },
-      headStyles: { fillColor: [41, 128, 185] }
+      styles: { 
+        font: 'helvetica', 
+        fontSize: 8,
+        cellPadding: 2,
+        lineWidth: 0.1,
+        lineColor: [200, 200, 200]
+      },
+      headStyles: { 
+        fillColor: [52, 73, 94], 
+        textColor: [255, 255, 255],
+        fontSize: 8
+      },
+      margin: { top: 0, left: margin, right: margin },
+      columnStyles: { 0: { cellWidth: 45 } },
     });
 
-    currentY = result.finalY + 20;
+    currentY = (doc as any).lastAutoTable.finalY + 3;
   }
 
   // --- Volantes Table ---
   if (meetingDates.length > 0) {
-    // Check and add page if needed before drawing section title
-    checkAndAddPage(14 * 0.7 + 10); // Height needed for section title + space
-
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(14);
+    doc.setFontSize(11);
     doc.text('Volantes', margin, currentY);
-    currentY += 14 * 0.7 + 10;
+    currentY += 11 * 0.7 + 3;
 
     const volantesHeaders = [['Data', 'Volante 1', 'Volante 2']];
     const volantesData = meetingDates.map(date => {
       const dateStr = formatarDataCompleta(date);
       const assignments = schedule[dateStr];
+      const diaSemana = date.getUTCDay();
+      const dataDisplay = `${date.getUTCDate()} ${NOMES_DIAS_SEMANA_ABREV[diaSemana]}`;
       return [
-        formatarDataCompleta(date),
-        getMemberNamePdfLocal(assignments?.['volante1']),
-        getMemberNamePdfLocal(assignments?.['volante2'])
+        dataDisplay,
+        getMemberNamePdfLocal(assignments?.volante1Id),
+        getMemberNamePdfLocal(assignments?.volante2Id),
       ];
     });
 
-    const result = (doc as any).autoTable({
+    doc.autoTable({
+      startY: currentY,
       head: volantesHeaders,
       body: volantesData,
-      startY: currentY,
-      margin: { left: margin },
       theme: 'grid',
-      styles: { fontSize: 10 },
-      headStyles: { fillColor: [41, 128, 185] }
+      styles: { 
+        font: 'helvetica', 
+        fontSize: 8,
+        cellPadding: 2,
+        lineWidth: 0.1,
+        lineColor: [200, 200, 200]
+      },
+      headStyles: { 
+        fillColor: [52, 73, 94], 
+        textColor: [255, 255, 255],
+        fontSize: 8
+      },
+      margin: { top: 0, left: margin, right: margin },
+      columnStyles: { 0: { cellWidth: 45 } },
     });
 
-    currentY = result.finalY + 20;
+    currentY = (doc as any).lastAutoTable.finalY + 3;
   }
 
-  // --- AV Table ---
+  // --- Áudio/Vídeo (AV) Table ---
   if (meetingDates.length > 0) {
-     // Check and add page if needed before drawing section title
-     checkAndAddPage(14 * 0.7 + 10); // Height needed for section title + space
-
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(14);
-    doc.text('Auxiliar de Vídeo', margin, currentY);
-    currentY += 14 * 0.7 + 10;
+    doc.setFontSize(11);
+    doc.text('Áudio/Vídeo (AV)', margin, currentY);
+    currentY += 11 * 0.7 + 3;
 
-    const avHeaders = [['Data', 'Auxiliar de Vídeo']];
+    const avHeaders = [['Data', 'Vídeo', 'Indicador Zoom', 'Backup']];
     const avData = meetingDates.map(date => {
       const dateStr = formatarDataCompleta(date);
       const assignments = schedule[dateStr];
+      const diaSemana = date.getUTCDay();
+      const dataDisplay = `${date.getUTCDate()} ${NOMES_DIAS_SEMANA_ABREV[diaSemana]}`;
       return [
-        formatarDataCompleta(date),
-        getMemberNamePdfLocal(assignments?.['av'])
+        dataDisplay,
+        getMemberNamePdfLocal(assignments?.videoAudioId),
+        getMemberNamePdfLocal(assignments?.indicadorZoomId),
+        getMemberNamePdfLocal(assignments?.backupAudioVideoId),
       ];
     });
 
-    const result = (doc as any).autoTable({
+    doc.autoTable({
+      startY: currentY,
       head: avHeaders,
       body: avData,
-      startY: currentY,
-      margin: { left: margin },
       theme: 'grid',
-      styles: { fontSize: 10 },
-      headStyles: { fillColor: [41, 128, 185] }
+      styles: { 
+        font: 'helvetica', 
+        fontSize: 8,
+        cellPadding: 2,
+        lineWidth: 0.1,
+        lineColor: [200, 200, 200]
+      },
+      headStyles: { 
+        fillColor: [52, 73, 94], 
+        textColor: [255, 255, 255],
+        fontSize: 8
+      },
+      margin: { top: 0, left: margin, right: margin },
+      columnStyles: { 0: { cellWidth: 45 } },
     });
 
-    currentY = result.finalY + 20;
+    currentY = (doc as any).lastAutoTable.finalY + 3;
   }
 
-  // --- Limpeza Table ---
-  if (meetingDates.length > 0) {
-    // Check and add page if needed before drawing section title
-    checkAndAddPage(14 * 0.7 + 10); // Height needed for section title + space
+  // --- Limpeza Tables (Side by Side) ---
+  const limpezaPosReuniaoDates = meetingDates.filter(date => {
+    const dayOfWeek = date.getUTCDay();
+    return dayOfWeek === DIAS_REUNIAO.meioSemana || dayOfWeek === DIAS_REUNIAO.publica;
+  });
 
+  const limpezaSemanalDates = meetingDates.filter(date => date.getUTCDay() === DIAS_REUNIAO.publica);
+
+  if (limpezaPosReuniaoDates.length > 0 || limpezaSemanalDates.length > 0) {
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(14);
+    doc.setFontSize(11);
     doc.text('Limpeza', margin, currentY);
-    currentY += 14 * 0.7 + 10;
+    currentY += 11 * 0.7 + 3;
 
-    const limpezaHeaders = [['Data', 'Responsável', 'Grupo']];
-    const limpezaData = meetingDates.map(date => {
-      const dateStr = formatarDataCompleta(date);
-      const assignments = schedule[dateStr];
-      return [
-        formatarDataCompleta(date),
-        getMemberNamePdfLocal(assignments?.['limpezaSemanalResponsavel']),
-        getMemberNamePdfLocal(assignments?.['limpezaAposReuniaoGrupoId'])
-      ];
-    });
+    // Calculate table widths and positions
+    const tableWidth = (contentWidth - 15) / 2;
+    const leftTableX = margin;
+    const rightTableX = margin + tableWidth + 15;
 
-    const result = (doc as any).autoTable({
-      head: limpezaHeaders,
-      body: limpezaData,
-      startY: currentY,
-      margin: { left: margin },
-      theme: 'grid',
-      styles: { fontSize: 10 },
-      headStyles: { fillColor: [41, 128, 185] }
-    });
+    // Store initial Y position for both tables
+    const initialY = currentY;
 
-    currentY = result.finalY + 20;
+    // --- Limpeza Pós Reunião Table (Left) ---
+    if (limpezaPosReuniaoDates.length > 0) {
+      const limpezaPosReuniaoHeaders = [['Data', 'Grupo (Pós Reunião)']];
+      const limpezaPosReuniaoData = limpezaPosReuniaoDates.map(date => {
+        const dateStr = formatarDataCompleta(date);
+        const assignments = schedule[dateStr];
+        const diaSemana = date.getUTCDay();
+        const dataDisplay = `${date.getUTCDate()} ${NOMES_DIAS_SEMANA_ABREV[diaSemana]}`;
+        
+        let posReuniaoGroup = '';
+        if (assignments?.limpezaAposReuniaoGrupoId && assignments.limpezaAposReuniaoGrupoId !== NONE_GROUP_ID) {
+          const group = GRUPOS_LIMPEZA_APOS_REUNIAO.find(g => g.id === assignments.limpezaAposReuniaoGrupoId);
+          posReuniaoGroup = group ? group.nome : '--';
+        } else {
+          posReuniaoGroup = '--';
+        }
+
+        return [dataDisplay, posReuniaoGroup];
+      });
+
+      doc.autoTable({
+        startY: currentY,
+        head: limpezaPosReuniaoHeaders,
+        body: limpezaPosReuniaoData,
+        theme: 'grid',
+        styles: { 
+          font: 'helvetica', 
+          fontSize: 8,
+          cellPadding: 2,
+          lineWidth: 0.1,
+          lineColor: [200, 200, 200]
+        },
+        headStyles: { 
+          fillColor: [52, 73, 94], 
+          textColor: [255, 255, 255],
+          fontSize: 8
+        },
+        margin: { top: 0, left: leftTableX, right: rightTableX },
+        tableWidth: tableWidth,
+        columnStyles: {
+          0: { cellWidth: 40 },
+          1: { cellWidth: 'auto' }
+        },
+      });
+    }
+
+    // --- Limpeza Semanal Table (Right) ---
+    if (limpezaSemanalDates.length > 0) {
+      // Reset Y position to align with left table
+      currentY = initialY;
+
+      const limpezaSemanalHeaders = [['Semana', 'Responsáveis (Semanal)']];
+      const limpezaSemanalData = limpezaSemanalDates.map(date => {
+        const dateStr = formatarDataCompleta(date);
+        const assignments = schedule[dateStr];
+        
+        let weeklyResponsible = assignments?.limpezaSemanalResponsavel || '--';
+        const weekDisplay = `${date.getUTCDate()}/${(month + 1).toString().padStart(2, '0')}`;
+
+        return [weekDisplay, weeklyResponsible];
+      });
+
+      doc.autoTable({
+        startY: currentY,
+        head: limpezaSemanalHeaders,
+        body: limpezaSemanalData,
+        theme: 'grid',
+        styles: { 
+          font: 'helvetica', 
+          fontSize: 8,
+          cellPadding: 2,
+          lineWidth: 0.1,
+          lineColor: [200, 200, 200]
+        },
+        headStyles: { 
+          fillColor: [52, 73, 94], 
+          textColor: [255, 255, 255],
+          fontSize: 8
+        },
+        margin: { top: 0, left: rightTableX, right: margin },
+        tableWidth: tableWidth,
+        columnStyles: {
+          0: { cellWidth: 40 },
+          1: { cellWidth: 'auto' }
+        },
+      });
+    }
+
+    // Update currentY to the bottom of the taller table
+    currentY = Math.max(
+      (doc as any).lastAutoTable.finalY,
+      currentY
+    ) + 3;
   }
 
   doc.save(`designacoes_${monthName.toLowerCase().replace(/ç/g, 'c').replace(/ã/g, 'a')}_${year}.pdf`);
