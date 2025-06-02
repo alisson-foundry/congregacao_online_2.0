@@ -207,6 +207,11 @@ export function ScheduleGenerationCard({
     }
   };
 
+  // Handler to update AV fields in the schedule state
+  const handleAVInputChange = (dateKey: string, columnKey: string, value: string) => {
+    onDirectAssignAV(dateKey, columnKey, value, null);
+  };
+
   const currentYearValue = new Date().getFullYear();
   const yearsForSelect = Array.from({ length: 5 }, (_, i) => currentYearValue - 2 + i);
 
@@ -312,9 +317,8 @@ export function ScheduleGenerationCard({
                 mes={currentMes}
                 ano={currentAno}
                 onOpenSubstitutionModal={onOpenSubstitutionModal}
-                onOpenAVMemberSelectionDialog={handleOpenAVMemberSelection}
-                onLimpezaChange={onLimpezaChange}
-                onDirectAssignAV={onDirectAssignAV}
+                onCleaningChange={onLimpezaChange}
+                onAVInputChange={handleAVInputChange}
               />
                {status === 'rascunho' && (
                  <div className="mt-6 flex flex-col sm:flex-row gap-4 justify-center">

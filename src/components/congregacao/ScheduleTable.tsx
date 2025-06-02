@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { UserPlus } from 'lucide-react'; // Para o botão de selecionar
 import { EditableMemberCell } from './EditableMemberCell'; // Import the new component
+import { Input } from '@/components/ui/input';
 
 interface ScheduleTableProps {
   title: string;
@@ -18,6 +19,7 @@ interface ScheduleTableProps {
   currentFullDateStrings: string[];
   isAVTable?: boolean;
   isReadOnly: boolean;
+  onInputChange?: (date: string, columnKey: string, value: string) => void;
 }
 
 export function ScheduleTable({
@@ -29,6 +31,7 @@ export function ScheduleTable({
   currentFullDateStrings,
   isAVTable = false,
   isReadOnly, // Adicionado aqui
+  onInputChange,
 }: ScheduleTableProps) {
   
   const getMemberName = (memberId: string | null): string | null => {
@@ -98,41 +101,20 @@ export function ScheduleTable({
                         key={col.key} 
                         className={isAVTable ? 'min-w-[100px]' : ''}
                       >
-                        {/* Use EditableMemberCell for AV table and not read-only */}
-                        {isAVTable && !isReadOnly ? (
-                           <EditableMemberCell
-                              // Add a unique key for each AV cell
-                              key={`${fullDateStr}-${col.key}`}
-                              currentMemberId={memberId}
-                              allMembers={allMembers}
-                              onMemberSelect={(newMemberId) => {
-                                // Call the onCellClick prop which is handled in ScheduleDisplay
-                                if (onCellClick && fullDateStr) {
-                                  // Call the onCellClick prop which is handled in ScheduleDisplay
-                                  // Pass newMemberId and true to indicate a finalized selection
-                                  onCellClick(fullDateStr, col.key, newMemberId, getMemberName(newMemberId), title, true);
-                                }
-                              }}
-                              placeholder="Selecionar"
-                              isReadOnly={isReadOnly} // Pass isReadOnly prop
-                            />
+                        {onCellClick && !isReadOnly ? (
+                          <Button
+                            variant="link"
+                            className="p-0 h-auto text-sm font-normal text-primary hover:underline w-full justify-start"
+                            onClick={() => {
+                              if (onCellClick && fullDateStr) {
+                                onCellClick(fullDateStr, col.key, memberId, memberName, title, false);
+                              }
+                            }}
+                          >
+                            {memberName || (isAVTable ? <><UserPlus className="mr-1.5 h-3.5 w-3.5"/> Selecionar</> : '--')}
+                          </Button>
                         ) : (
-                           // Existing logic for other tables or read-only AV table
-                           onCellClick && !isReadOnly ? (
-                             <Button
-                               variant="link"
-                               className="p-0 h-auto text-sm font-normal text-primary hover:underline w-full justify-start"
-                               onClick={() => {
-                                 if (onCellClick && fullDateStr) {
-                                   onCellClick(fullDateStr, col.key, memberId, memberName, title, false);
-                                 }
-                               }}
-                             >
-                               {memberName || '--'}
-                             </Button>
-                           ) : (
-                             memberName || '--'
-                           )
+                          memberName || '--'
                         )}
                       </TableCell>
                     );

@@ -1,4 +1,3 @@
-
 'use server'; 
 
 import type { Membro, FuncaoDesignada, DesignacoesFeitas, DiasReuniao } from './types';
@@ -241,19 +240,24 @@ export async function calcularDesignacoesAction(
     const tipoReuniaoAtual = dataReuniao.getUTCDay() === DIAS_REUNIAO.meioSemana ? 'meioSemana' : 'publica';
     
     const funcoesParaGeracaoAutomatica = FUNCOES_DESIGNADAS.filter(
-      f => f.tipoReuniao.includes(tipoReuniaoAtual) && f.tabela !== 'AV'
+      f => f.tipoReuniao.includes(tipoReuniaoAtual)
     );
     
     const dataReuniaoAnteriorObj = encontrarDataReuniaoAnterior(dataReuniao, tipoReuniaoAtual, datasDeReuniaoNoMes, DIAS_REUNIAO);
     const dataReuniaoAnteriorStr = dataReuniaoAnteriorObj ? formatarDataCompleta(dataReuniaoAnteriorObj) : null;
 
     for (const funcao of funcoesParaGeracaoAutomatica) {
+      // Filter out undefined values for type compatibility
+      const assignmentsForDay: Record<string, string | null> = {};
+      Object.entries(designacoesFeitasNoMesAtual[dataReuniaoStr] || {}).forEach(([k, v]) => {
+        if (v !== undefined) assignmentsForDay[k] = v === undefined ? null : v;
+      });
       const membrosElegiveis = await getEligibleMembersForFunctionDate(
         funcao,
         dataReuniao,
         dataReuniaoStr,
         membrosDisponiveis,
-        designacoesFeitasNoMesAtual[dataReuniaoStr]
+        assignmentsForDay
       );
 
       if (membrosElegiveis.length === 0) {
@@ -312,7 +316,10 @@ export async function findNextBestCandidateForSubstitution(
 
   if (!targetFunction) return null;
 
-  const assignmentsOnTargetDate = currentAssignmentsForMonth[dateStr] || {};
+  const assignmentsOnTargetDate: Record<string, string | null> = {};
+  Object.entries(currentAssignmentsForMonth[dateStr] || {}).forEach(([k, v]) => {
+    if (v !== undefined) assignmentsOnTargetDate[k] = v === undefined ? null : v;
+  });
   
   const datasDeReuniaoNoMesFicticia : Date[] = Object.keys(currentAssignmentsForMonth)
     .map(d => new Date(d + "T00:00:00"))
@@ -358,7 +365,10 @@ export async function getPotentialSubstitutesList(
 
   if (!targetFunction) return [];
 
-  const assignmentsOnTargetDate = currentAssignmentsForMonth[dateStr] || {};
+  const assignmentsOnTargetDate: Record<string, string | null> = {};
+  Object.entries(currentAssignmentsForMonth[dateStr] || {}).forEach(([k, v]) => {
+    if (v !== undefined) assignmentsOnTargetDate[k] = v === undefined ? null : v;
+  });
   
   const datasDeReuniaoNoMesFicticia : Date[] = Object.keys(currentAssignmentsForMonth)
     .map(d => new Date(d + "T00:00:00"))

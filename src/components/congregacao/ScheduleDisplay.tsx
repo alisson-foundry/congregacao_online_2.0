@@ -199,10 +199,9 @@ interface ScheduleDisplayProps {
     mes: number;
     ano: number;
     onOpenSubstitutionModal: (details: SubstitutionDetails) => void;
-    onOpenAVMemberSelectionDialog: (dateStr: string, functionId: string, columnKey: string, currentMemberId: string | null) => void;
-    onLimpezaChange: (dateKey: string, type: 'aposReuniao' | 'semanal', value: string | null) => void;
+    onCleaningChange: (dateKey: string, type: 'aposReuniao' | 'semanal', value: string | null) => void;
+    onAVInputChange: (dateKey: string, columnKey: string, value: string) => void;
     status: string | null;
-    onDirectAssignAV: (date: string, functionId: string, newMemberId: string | null, originalMemberId: string | null) => void;
 }
 
 // Helper function to get ISO week number
@@ -221,10 +220,9 @@ export function ScheduleDisplay({
     mes,
     ano,
     onOpenSubstitutionModal,
-    onOpenAVMemberSelectionDialog,
-    onLimpezaChange,
+    onCleaningChange,
+    onAVInputChange,
     status,
-    onDirectAssignAV,
 }: ScheduleDisplayProps) {
   const { toast } = useToast();
 
@@ -253,15 +251,6 @@ export function ScheduleDisplay({
     }
 
     const realFunctionId = getRealFunctionId(columnKey, date, tableTitle);
-    console.log('ScheduleDisplay - handleCellClick:', {
-      date,
-      columnKey,
-      memberIdOrNewMemberId,
-      memberNameOrNewMemberName,
-      tableTitle,
-      finalized,
-      realFunctionId
-    });
 
     if (memberIdOrNewMemberId) {
       const details: SubstitutionDetails = {
@@ -366,8 +355,8 @@ export function ScheduleDisplay({
             data={dadosAV.data}
             columns={dadosAV.columns}
             allMembers={membros}
-            onCellClick={(date, columnKey, memberIdOrNewMemberId, memberNameOrNewMemberName, tableTitle, finalized) => handleCellClick(date, columnKey, memberIdOrNewMemberId, memberNameOrNewMemberName, tableTitle, finalized)}
             currentFullDateStrings={dadosAV.fullDateStrings}
+            onInputChange={onAVInputChange}
             isAVTable={true}
  isReadOnly={status === 'finalizado'}
           />
@@ -398,7 +387,7 @@ export function ScheduleDisplay({
                       </div>
                       <Select
                         value={currentGroupId ?? NONE_GROUP_ID}
-                        onValueChange={(value) => onLimpezaChange(dateStr, 'aposReuniao', value === NONE_GROUP_ID ? null : value)}
+                        onValueChange={(value) => onCleaningChange(dateStr, 'aposReuniao', value === NONE_GROUP_ID ? null : value)}
  disabled={status === 'finalizado'}
                       >
                         <SelectTrigger className="flex-1 h-9 text-sm">
@@ -428,7 +417,7 @@ export function ScheduleDisplay({
                       <Input
                         id={`limpeza-semanal-${week.dateKey}`}
                         value={currentResponsavel}
-                        onChange={(e) => onLimpezaChange(week.dateKey, 'semanal', e.target.value)}
+                        onChange={(e) => onCleaningChange(week.dateKey, 'semanal', e.target.value)}
                         placeholder="Responsáveis"
  disabled={status === 'finalizado'}
                         className="flex-1 h-9 text-sm"
