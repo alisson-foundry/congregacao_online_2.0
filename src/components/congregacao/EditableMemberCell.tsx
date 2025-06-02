@@ -174,7 +174,8 @@ export function EditableMemberCell({
         <span
            className={cn(
            "text-sm",
-           !selectedMemberName && "text-muted-foreground italic"
+           !selectedMemberName && "text-muted-foreground italic",
+           selectedMemberName && !isReadOnly && "text-primary hover:underline cursor-pointer"
         )}
            onClick={() => {
              if (!isReadOnly && currentMemberId) {
