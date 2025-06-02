@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import { formatarDataCompleta, getRealFunctionId } from '@/lib/congregacao/utils';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { EditableMemberCell } from './EditableMemberCell';
 
 
 export function prepararDadosTabela(
@@ -199,6 +200,7 @@ interface ScheduleDisplayProps {
     onOpenAVMemberSelectionDialog: (dateStr: string, functionId: string, columnKey: string, currentMemberId: string | null) => void;
     onLimpezaChange: (dateKey: string, type: 'aposReuniao' | 'semanal', value: string | null) => void;
  status: string | null;
+   onDirectAssignAV: (date: string, functionId: string, newMemberId: string | null, originalMemberId: string | null) => void;
 }
 
 // Helper function to get ISO week number
@@ -220,6 +222,7 @@ export function ScheduleDisplay({
     onOpenAVMemberSelectionDialog,
     onLimpezaChange,
  status,
+   onDirectAssignAV,
 }: ScheduleDisplayProps) {
   const { toast } = useToast();
 
@@ -235,23 +238,46 @@ export function ScheduleDisplay({
   const handleCellClick = (
     date: string,
     columnKey: string,
-    originalMemberId: string | null,
-    originalMemberName: string | null,
-    tableTitle: string
+    memberIdOrNewMemberId: string | null,
+    memberNameOrNewMemberName: string | null,
+    tableTitle: string,
+    finalized: boolean
   ) => {
- if (status === 'finalizado') {
- return; // Do nothing if the schedule is finalized
- }
+    if (status === 'finalizado') {
+      return; // Do nothing if the schedule is finalized
+    }
 
     const realFunctionId = getRealFunctionId(columnKey, date, tableTitle);
 
     if (tableTitle === 'Áudio/Vídeo (AV)') {
-      onOpenAVMemberSelectionDialog(date, realFunctionId, columnKey, originalMemberId);
-    } else {
-      if (originalMemberId && originalMemberName) {
-        onOpenSubstitutionModal({ date, functionId: realFunctionId, originalMemberId, originalMemberName, currentFunctionGroupId: tableTitle });
+      if (finalized) {
+         onDirectAssignAV(date, realFunctionId, memberIdOrNewMemberId, null);
       } else {
-        onOpenSubstitutionModal({ date, functionId: realFunctionId, originalMemberId: '', originalMemberName: "Ninguém Designado", currentFunctionGroupId: tableTitle });
+        // Lógica antiga (manter caso seja necessário para algo mais, mas para AV o click inicial agora abre o autocomplete no EditableMemberCell)
+        // Se precisar reabrir o modal antigo por algum motivo, esta seria a lógica.
+        // Por enquanto, o fluxo é click -> EditableMemberCell -> Autocomplete -> onMemberSelect -> handleCellClick(..., true) -> onDirectAssignAV
+        // Esta parte else { ... } pode não ser mais atingida para cliques na tabela de AV.
+         // Se chegarmos aqui, é um clique que não veio da seleção finalizada do EditableMemberCell.
+         // Isso pode indicar um clique na célula vazia para iniciar a edição (que agora é tratado dentro do EditableMemberCell)
+         // ou um caso que precisamos reconsiderar.
+         // Por agora, focaremos no fluxo do 'finalized: true'.
+      }
+    } else {
+      if (memberIdOrNewMemberId) {
+         const details: SubstitutionDetails = {
+             date: date,
+             functionId: realFunctionId,
+             originalMemberId: memberIdOrNewMemberId,
+             originalMemberName: memberNameOrNewMemberName || 'Membro',
+             currentFunctionGroupId: tableTitle,
+         };
+         onOpenSubstitutionModal(details);
+      } else {
+        toast({
+          title: "Atenção",
+          description: "Selecione um membro primeiro.",
+          variant: "default"
+        });
       }
     }
   };
@@ -323,7 +349,7 @@ export function ScheduleDisplay({
             data={dadosIndicadores.data}
             columns={dadosIndicadores.columns}
             allMembers={membros}
-            onCellClick={handleCellClick}
+            onCellClick={(date, columnKey, memberIdOrNewMemberId, memberNameOrNewMemberName) => handleCellClick(date, columnKey, memberIdOrNewMemberId, memberNameOrNewMemberName, 'Indicadores', false)}
             currentFullDateStrings={dadosIndicadores.fullDateStrings}
  isReadOnly={status === 'finalizado'}
           />
@@ -332,7 +358,7 @@ export function ScheduleDisplay({
             data={dadosVolantes.data}
             columns={dadosVolantes.columns}
             allMembers={membros}
-            onCellClick={handleCellClick}
+            onCellClick={(date, columnKey, memberIdOrNewMemberId, memberNameOrNewMemberName) => handleCellClick(date, columnKey, memberIdOrNewMemberId, memberNameOrNewMemberName, 'Volantes', false)}
             currentFullDateStrings={dadosVolantes.fullDateStrings}
  isReadOnly={status === 'finalizado'}
           />
@@ -341,7 +367,7 @@ export function ScheduleDisplay({
             data={dadosAV.data}
             columns={dadosAV.columns}
             allMembers={membros}
-            onCellClick={handleCellClick}
+            onCellClick={(date, columnKey, memberIdOrNewMemberId, memberNameOrNewMemberName) => handleCellClick(date, columnKey, memberIdOrNewMemberId, memberNameOrNewMemberName, 'Áudio/Vídeo (AV)', false)}
             currentFullDateStrings={dadosAV.fullDateStrings}
             isAVTable={true}
  isReadOnly={status === 'finalizado'}
