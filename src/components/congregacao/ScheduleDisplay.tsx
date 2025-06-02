@@ -158,31 +158,39 @@ export function prepararDadosTabela(
         else if (diaSemanaIndex === DIAS_REUNIAO.publica) badgeColorClass = DIAS_SEMANA_REUNIAO_CORES.publica;
 
         const designacoesDoDia = designacoesFeitas[dataStr] || {};
-        const row: Designacao = { data: `${dia} ${diaAbrev}`, diaSemanaBadgeColor: badgeColorClass };
+        console.log('prepararDadosTabela - AV: Processing date', dataStr, 'designacoesDoDia:', designacoesDoDia);
 
-        if (diaSemanaIndex === DIAS_REUNIAO.meioSemana) {
-            row['avVideoQui'] = designacoesDoDia['avVideoQui'];
-            row['avIndicadorZoomQui'] = designacoesDoDia['avIndicadorZoomQui'];
-            row['avBackupQui'] = designacoesDoDia['avBackupQui'];
-        } else if (diaSemanaIndex === DIAS_REUNIAO.publica) {
-            row['avVideoDom'] = designacoesDoDia['avVideoDom'];
-            row['avIndicadorZoomDom'] = designacoesDoDia['avIndicadorZoomDom'];
-            row['avBackupDom'] = designacoesDoDia['avBackupDom'];
-        }
+        // Get the correct keys based on the day
+        const videoKey = diaSemanaIndex === DIAS_REUNIAO.meioSemana ? 'avVideoQui' : 'avVideoDom';
+        const indicadorZoomKey = diaSemanaIndex === DIAS_REUNIAO.meioSemana ? 'avIndicadorZoomQui' : 'avIndicadorZoomDom';
+        const backupAVKey = diaSemanaIndex === DIAS_REUNIAO.meioSemana ? 'avBackupQui' : 'avBackupDom';
+
+        // Log the actual values being used
+        console.log('prepararDadosTabela - AV: Using keys for', dataStr, {
+            videoKey,
+            indicadorZoomKey,
+            backupAVKey,
+            videoValue: designacoesDoDia[videoKey],
+            indicadorZoomValue: designacoesDoDia[indicadorZoomKey],
+            backupAVValue: designacoesDoDia[backupAVKey]
+        });
+
+        const row: Designacao = {
+            data: `${dia} ${diaAbrev}`,
+            diaSemanaBadgeColor: badgeColorClass,
+            video: designacoesDoDia[videoKey] ?? null,
+            indicadorZoom: designacoesDoDia[indicadorZoomKey] ?? null,
+            backupAV: designacoesDoDia[backupAVKey] ?? null,
+        };
+
+        console.log('prepararDadosTabela - AV: Created row', dataStr, ':', row);
         dataTabelaAV.push(row);
     });
 
-    const remappedDataAV = dataTabelaAV.map((row, index) => {
-        const dataObj = new Date(sortedDates[index] + 'T00:00:00');
-        const diaSemanaIndex = dataObj.getUTCDay();
-        return {
-            ...row,
-            video: row[MAPPED_COL_KEYS_AV.video(diaSemanaIndex)] ?? null,
-            indicadorZoom: row[MAPPED_COL_KEYS_AV.indicadorZoom(diaSemanaIndex)] ?? null,
-            backupAV: row[MAPPED_COL_KEYS_AV.backupAV(diaSemanaIndex)] ?? null,
-        };
-    });
-    return { data: remappedDataAV, columns, fullDateStrings };
+    // Log the final AV data before returning
+    console.log('prepararDadosTabela - AV: Final data:', dataTabelaAV);
+
+    return { data: dataTabelaAV, columns, fullDateStrings };
   } else {
     columns = [];
   }
@@ -199,8 +207,8 @@ interface ScheduleDisplayProps {
     onOpenSubstitutionModal: (details: SubstitutionDetails) => void;
     onOpenAVMemberSelectionDialog: (dateStr: string, functionId: string, columnKey: string, currentMemberId: string | null) => void;
     onLimpezaChange: (dateKey: string, type: 'aposReuniao' | 'semanal', value: string | null) => void;
- status: string | null;
-   onDirectAssignAV: (date: string, functionId: string, newMemberId: string | null, originalMemberId: string | null) => void;
+    status: string | null;
+    onDirectAssignAV: (date: string, functionId: string, newMemberId: string | null, originalMemberId: string | null) => void;
 }
 
 // Helper function to get ISO week number
@@ -221,10 +229,13 @@ export function ScheduleDisplay({
     onOpenSubstitutionModal,
     onOpenAVMemberSelectionDialog,
     onLimpezaChange,
- status,
-   onDirectAssignAV,
+    status,
+    onDirectAssignAV,
 }: ScheduleDisplayProps) {
   const { toast } = useToast();
+
+  // Log to check if designacoesFeitas updates
+  console.log('ScheduleDisplay - designacoesFeitas updated:', designacoesFeitas);
 
   if (!designacoesFeitas || Object.keys(designacoesFeitas).length === 0) {
     return null;
@@ -248,19 +259,27 @@ export function ScheduleDisplay({
     }
 
     const realFunctionId = getRealFunctionId(columnKey, date, tableTitle);
+    console.log('ScheduleDisplay - handleCellClick:', {
+      date,
+      columnKey,
+      memberIdOrNewMemberId,
+      memberNameOrNewMemberName,
+      tableTitle,
+      finalized,
+      realFunctionId
+    });
 
     if (tableTitle === 'Áudio/Vídeo (AV)') {
       if (finalized) {
-         onDirectAssignAV(date, realFunctionId, memberIdOrNewMemberId, null);
+        // If finalized is true, it means a selection was made in EditableMemberCell dropdown.
+        // We should directly assign the member.
+        console.log('ScheduleDisplay - Direct assignment from EditableMemberCell dropdown. Calling onDirectAssignAV with:', { date, realFunctionId, memberIdOrNewMemberId });
+        onDirectAssignAV(date, realFunctionId, memberIdOrNewMemberId, null);
       } else {
-        // Lógica antiga (manter caso seja necessário para algo mais, mas para AV o click inicial agora abre o autocomplete no EditableMemberCell)
-        // Se precisar reabrir o modal antigo por algum motivo, esta seria a lógica.
-        // Por enquanto, o fluxo é click -> EditableMemberCell -> Autocomplete -> onMemberSelect -> handleCellClick(..., true) -> onDirectAssignAV
-        // Esta parte else { ... } pode não ser mais atingida para cliques na tabela de AV.
-         // Se chegarmos aqui, é um clique que não veio da seleção finalizada do EditableMemberCell.
-         // Isso pode indicar um clique na célula vazia para iniciar a edição (que agora é tratado dentro do EditableMemberCell)
-         // ou um caso que precisamos reconsiderar.
-         // Por agora, focaremos no fluxo do 'finalized: true'.
+        // If finalized is false, it means a regular click on the cell (not from dropdown selection).
+        // We should open the member selection dialog.
+        console.log('ScheduleDisplay - AV cell clicked (not from dropdown). Opening member selection dialog for:', { date, realFunctionId, columnKey, memberIdOrNewMemberId });
+        onOpenAVMemberSelectionDialog(date, realFunctionId, columnKey, memberIdOrNewMemberId);
       }
     } else {
       if (memberIdOrNewMemberId) {
@@ -367,7 +386,7 @@ export function ScheduleDisplay({
             data={dadosAV.data}
             columns={dadosAV.columns}
             allMembers={membros}
-            onCellClick={(date, columnKey, memberIdOrNewMemberId, memberNameOrNewMemberName) => handleCellClick(date, columnKey, memberIdOrNewMemberId, memberNameOrNewMemberName, 'Áudio/Vídeo (AV)', false)}
+            onCellClick={(date, columnKey, memberIdOrNewMemberId, memberNameOrNewMemberName, tableTitle, finalized) => handleCellClick(date, columnKey, memberIdOrNewMemberId, memberNameOrNewMemberName, tableTitle, finalized)}
             currentFullDateStrings={dadosAV.fullDateStrings}
             isAVTable={true}
  isReadOnly={status === 'finalizado'}

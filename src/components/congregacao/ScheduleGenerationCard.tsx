@@ -314,6 +314,7 @@ export function ScheduleGenerationCard({
                 onOpenSubstitutionModal={onOpenSubstitutionModal}
                 onOpenAVMemberSelectionDialog={handleOpenAVMemberSelection}
                 onLimpezaChange={onLimpezaChange}
+                onDirectAssignAV={onDirectAssignAV}
               />
                {status === 'rascunho' && (
                  <div className="mt-6 flex flex-col sm:flex-row gap-4 justify-center">

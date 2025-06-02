@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { Command, CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -32,20 +32,27 @@ export function EditableMemberCell({
 
   // Find initial selected member name
   useEffect(() => {
+    // console.log('EditableMemberCell useEffect - currentMemberId:', currentMemberId);
     const member = allMembers.find(m => m.id === currentMemberId);
+    // console.log('EditableMemberCell useEffect - found member:', member);
     setSelectedMemberName(member ? member.nome : null);
     setInputValue(member ? member.nome : '');
   }, [currentMemberId, allMembers]);
 
-  const handleSelect = (memberId: string | null) => {
+  const handleSelectMember = useCallback((memberId: string | null) => {
+    console.log('EditableMemberCell - handleSelectMember called with memberId:', memberId);
     const member = allMembers.find(m => m.id === memberId);
-    const newName = member ? member.nome : null;
-    setSelectedMemberName(newName);
-    setInputValue(newName || '');
-    onMemberSelect(memberId);
-    setIsEditing(false);
+    console.log('EditableMemberCell - Selected member object:', member);
+    setSelectedMemberName(member ? member.nome : null);
+    setInputValue(member ? member.nome : '');
     setPopoverOpen(false);
-  };
+    setIsEditing(false);
+    onMemberSelect(memberId);
+  }, [allMembers, onMemberSelect]);
+
+  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setInputValue(e.target.value);
+  }, []);
 
   const filteredMembers = allMembers.filter(member =>
     member.nome.toLowerCase().includes(inputValue.toLowerCase())
@@ -102,7 +109,7 @@ export function EditableMemberCell({
              <Input
                 ref={inputRef}
                 value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
+                onChange={handleInputChange}
                 placeholder={placeholder}
                 className="h-6 p-1 text-sm"
                 onKeyDown={(e) => {
@@ -127,7 +134,7 @@ export function EditableMemberCell({
                     <CommandItem
                       key={member.id}
                       value={member.nome}
-                      onSelect={() => handleSelect(member.id)}
+                      onSelect={() => handleSelectMember(member.id)}
                       className="text-sm"
                     >
                       {member.nome}
@@ -143,7 +150,7 @@ export function EditableMemberCell({
                    {selectedMemberName && (
                      <CommandItem
                        value="Limpar Designação"
-                       onSelect={() => handleSelect(null)}
+                       onSelect={() => handleSelectMember(null)}
                        className="text-sm text-red-500"
                      >
                        Limpar Designação

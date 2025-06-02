@@ -101,19 +101,21 @@ export function ScheduleTable({
                         {/* Use EditableMemberCell for AV table and not read-only */}
                         {isAVTable && !isReadOnly ? (
                            <EditableMemberCell
-                             currentMemberId={memberId}
-                             allMembers={allMembers}
-                             onMemberSelect={(newMemberId) => {
-                               // Call the onCellClick prop which is handled in ScheduleDisplay
-                               if (onCellClick && fullDateStr) {
-                                 // Call the onCellClick prop which is handled in ScheduleDisplay
-                                 // Pass newMemberId and true to indicate a finalized selection
-                                 onCellClick(fullDateStr, col.key, newMemberId, getMemberName(newMemberId), title, true);
-                               }
-                             }}
-                             placeholder="Selecionar"
-                             isReadOnly={isReadOnly} // Pass isReadOnly prop
-                           />
+                              // Add a unique key for each AV cell
+                              key={`${fullDateStr}-${col.key}`}
+                              currentMemberId={memberId}
+                              allMembers={allMembers}
+                              onMemberSelect={(newMemberId) => {
+                                // Call the onCellClick prop which is handled in ScheduleDisplay
+                                if (onCellClick && fullDateStr) {
+                                  // Call the onCellClick prop which is handled in ScheduleDisplay
+                                  // Pass newMemberId and true to indicate a finalized selection
+                                  onCellClick(fullDateStr, col.key, newMemberId, getMemberName(newMemberId), title, true);
+                                }
+                              }}
+                              placeholder="Selecionar"
+                              isReadOnly={isReadOnly} // Pass isReadOnly prop
+                            />
                         ) : (
                            // Existing logic for other tables or read-only AV table
                            onCellClick && !isReadOnly ? (

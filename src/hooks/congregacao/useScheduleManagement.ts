@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -42,6 +41,7 @@ export function useScheduleManagement({ membros, updateMemberHistory }: UseSched
   }, []);
 
   const persistScheduleToStateAndCache = useCallback((newSchedule: DesignacoesFeitas | null, newMes: number | null, newAno: number | null, newStatus: 'rascunho' | 'finalizado' | null) => {
+    console.log('persistScheduleToStateAndCache called with:', { newSchedule, newMes, newAno, newStatus });
     setScheduleState({ designacoes: newSchedule, mes: newMes, ano: newAno, status: newStatus });
     if (newSchedule && newMes !== null && newAno !== null && newStatus) {
       salvarCacheDesignacoes({ schedule: newSchedule, mes: newMes, ano: newAno, status: newStatus });
@@ -104,16 +104,22 @@ export function useScheduleManagement({ membros, updateMemberHistory }: UseSched
     currentMesValue: number,
     currentAnoValue: number
   ) => {
+    console.log('useScheduleManagement - confirmManualAssignmentOrSubstitution called with:', { date, functionId, newMemberId, originalMemberId, currentMesValue, currentAnoValue });
+    console.log('useScheduleManagement - Confirming manual assignment/substitution:', { date, functionId, newMemberId, originalMemberId });
     const updatedSchedule = JSON.parse(JSON.stringify(currentScheduleData)) as DesignacoesFeitas;
+    console.log('useScheduleManagement - updatedSchedule BEFORE assignment:', updatedSchedule);
     if (!updatedSchedule[date]) {
       updatedSchedule[date] = {};
     }
     updatedSchedule[date][functionId] = newMemberId;
 
+    console.log('useScheduleManagement - updatedSchedule AFTER assignment:', updatedSchedule);
+
     // Mantém o status atual ao fazer uma substituição/designação manual.
     // Se o cronograma era 'finalizado', ele continua 'finalizado' mas com a alteração.
     // Se era 'rascunho', continua 'rascunho'.
     const currentStatus = scheduleState.status || 'rascunho'; 
+    console.log('useScheduleManagement - Calling persistScheduleToStateAndCache with:', { updatedSchedule, currentMesValue, currentAnoValue, currentStatus });
     persistScheduleToStateAndCache(updatedSchedule, currentMesValue, currentAnoValue, currentStatus);
 
     const membrosComHistoricoAtualizado = [...membros].map(m => {
@@ -220,9 +226,12 @@ export function useScheduleManagement({ membros, updateMemberHistory }: UseSched
   }, [scheduleState, persistScheduleToStateAndCache]);
 
   const carregarDesignacoes = useCallback((mes: number, ano: number) => {
+    console.log('Carregando designações para', { mes, ano });
     const todosCronogramas = carregarTodosCronogramas();
     const yearMonthKey = `${ano}-${String(mes + 1).padStart(2, '0')}`;
     const saved = todosCronogramas ? todosCronogramas[yearMonthKey] : null;
+
+    console.log('Dados salvos encontrados no cache para', yearMonthKey, ':', saved);
 
     if (saved) {
       persistScheduleToStateAndCache(saved.schedule, saved.mes, saved.ano, saved.status);

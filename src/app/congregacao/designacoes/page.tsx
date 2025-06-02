@@ -136,7 +136,8 @@ export default function DesignacoesPage() {
     newMemberId: string | null,
     originalMemberId: string | null
   ) => {
-    if (scheduleManagement.scheduleData === null || scheduleManagement.scheduleMes === null || scheduleManagement.scheduleAno === null) {
+    console.log('handleDirectAssignAV - Calling confirmManualAssignmentOrSubstitution with:', { date, functionId, newMemberId, originalMemberId, scheduleData: scheduleManagement.scheduleData, mes: scheduleManagement.scheduleMes, ano: scheduleManagement.scheduleAno });
+    if (!scheduleManagement.scheduleData || scheduleManagement.scheduleMes === null || scheduleManagement.scheduleAno === null) {
       toast({ title: "Erro", description: "Não foi possível processar a designação AV. Dados do cronograma ausentes.", variant: "destructive" });
       return;
     }
