@@ -44,10 +44,8 @@ export const FUNCOES_DESIGNADAS: FuncaoDesignada[] = [
   // Áudio/Vídeo
   { id: 'avVideoQui', nome: 'Vídeo (Qui)', tipoReuniao: ['meioSemana'], tabela: 'AV', permissaoRequeridaBase: 'av' },
   { id: 'avIndicadorZoomQui', nome: 'Indicador Zoom (Qui)', tipoReuniao: ['meioSemana'], tabela: 'AV', permissaoRequeridaBase: 'av' },
-  { id: 'avBackupQui', nome: 'Backup (Qui)', tipoReuniao: ['meioSemana'], tabela: 'AV', permissaoRequeridaBase: 'av' },
   { id: 'avVideoDom', nome: 'Vídeo (Dom)', tipoReuniao: ['publica'], tabela: 'AV', permissaoRequeridaBase: 'av' },
   { id: 'avIndicadorZoomDom', nome: 'Indicador Zoom (Dom)', tipoReuniao: ['publica'], tabela: 'AV', permissaoRequeridaBase: 'av' },
-  { id: 'avBackupDom', nome: 'Backup (Dom)', tipoReuniao: ['publica'], tabela: 'AV', permissaoRequeridaBase: 'av' },
 ];
 
 export const TIPOS_DESIGNACAO: Record<string, string> = FUNCOES_DESIGNADAS.reduce((acc: Record<string, string>, funcao) => {

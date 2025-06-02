@@ -1,4 +1,3 @@
-
 import { type Membro, type PermissaoBase, type Impedimento, type ParsedNvmcProgram, type ParsedNvmcPart } from './types';
 import { PERMISSOES_BASE, NOMES_MESES, NOMES_DIAS_SEMANA_ABREV, FUNCOES_DESIGNADAS, DIAS_REUNIAO } from './constants';
 
@@ -114,7 +113,6 @@ export function getRealFunctionId(columnKey: string, dateStr: string, tipoTabela
     } else if (tipoTabela === 'Áudio/Vídeo (AV)') { 
         if (columnKey === 'video') return isMeioSemana ? 'avVideoQui' : 'avVideoDom';
         if (columnKey === 'indicadorZoom') return isMeioSemana ? 'avIndicadorZoomQui' : 'avIndicadorZoomDom';
-        if (columnKey === 'backupAV') return isMeioSemana ? 'avBackupQui' : 'avBackupDom';
     }
     // If columnKey is already specific (e.g., 'indicadorExternoDom' or 'leitorDom'), or not matched above, return it.
     return columnKey; 

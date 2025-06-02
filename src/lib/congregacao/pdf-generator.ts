@@ -272,10 +272,14 @@ export function generateSchedulePdf(
         fontSize: 8
       },
       margin: { top: 0, left: margin, right: margin },
-      columnStyles: { 0: { cellWidth: 45 } },
+      columnStyles: { 
+        0: { cellWidth: 45 },
+        1: { cellWidth: 120 },
+        2: { cellWidth: 120 }
+      },
     });
 
-    currentY = (doc as any).lastAutoTable.finalY + 3;
+    currentY = (doc as any).lastAutoTable.finalY + 25;
   }
 
   // --- Volantes Table ---
@@ -316,10 +320,14 @@ export function generateSchedulePdf(
         fontSize: 8
       },
       margin: { top: 0, left: margin, right: margin },
-      columnStyles: { 0: { cellWidth: 45 } },
+      columnStyles: { 
+        0: { cellWidth: 45 },
+        1: { cellWidth: 120 },
+        2: { cellWidth: 120 }
+      },
     });
 
-    currentY = (doc as any).lastAutoTable.finalY + 3;
+    currentY = (doc as any).lastAutoTable.finalY + 25;
   }
 
   // --- Áudio/Vídeo (AV) Table ---
@@ -329,7 +337,7 @@ export function generateSchedulePdf(
     doc.text('Áudio/Vídeo (AV)', margin, currentY);
     currentY += 11 * 0.7 + 3;
 
-    const avHeaders = [['Data', 'Vídeo', 'Indicador Zoom', 'Backup']];
+    const avHeaders = [['Data', 'Vídeo', 'Indicador Zoom']];
     const avData = meetingDates.map(date => {
       const dateStr = formatarDataCompleta(date);
       const assignments = schedule[dateStr];
@@ -339,7 +347,6 @@ export function generateSchedulePdf(
         dataDisplay,
         getMemberNamePdfLocal(assignments?.videoAudioId),
         getMemberNamePdfLocal(assignments?.indicadorZoomId),
-        getMemberNamePdfLocal(assignments?.backupAudioVideoId),
       ];
     });
 
@@ -361,10 +368,14 @@ export function generateSchedulePdf(
         fontSize: 8
       },
       margin: { top: 0, left: margin, right: margin },
-      columnStyles: { 0: { cellWidth: 45 } },
+      columnStyles: { 
+        0: { cellWidth: 45 },
+        1: { cellWidth: 120 },
+        2: { cellWidth: 120 }
+      },
     });
 
-    currentY = (doc as any).lastAutoTable.finalY + 3;
+    currentY = (doc as any).lastAutoTable.finalY + 25;
   }
 
   // --- Limpeza Tables (Side by Side) ---
@@ -481,7 +492,7 @@ export function generateSchedulePdf(
     currentY = Math.max(
       (doc as any).lastAutoTable.finalY,
       currentY
-    ) + 3;
+    ) + 20;
   }
 
   doc.save(`designacoes_${monthName.toLowerCase().replace(/ç/g, 'c').replace(/ã/g, 'a')}_${year}.pdf`);

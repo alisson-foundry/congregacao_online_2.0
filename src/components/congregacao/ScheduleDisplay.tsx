@@ -140,12 +140,10 @@ export function prepararDadosTabela(
         { key: 'data', label: 'Data' },
         { key: 'video', label: 'Vídeo' },
         { key: 'indicadorZoom', label: 'Indicador Zoom' },
-        { key: 'backupAV', label: 'Backup' },
     ];
     const MAPPED_COL_KEYS_AV = {
         video: (diaSemanaIndex: number) => diaSemanaIndex === DIAS_REUNIAO.meioSemana ? 'avVideoQui' : 'avVideoDom',
         indicadorZoom: (diaSemanaIndex: number) => diaSemanaIndex === DIAS_REUNIAO.meioSemana ? 'avIndicadorZoomQui' : 'avIndicadorZoomDom',
-        backupAV: (diaSemanaIndex: number) => diaSemanaIndex === DIAS_REUNIAO.meioSemana ? 'avBackupQui' : 'avBackupDom',
     };
     const dataTabelaAV: Designacao[] = [];
     sortedDates.forEach(dataStr => {
@@ -163,16 +161,13 @@ export function prepararDadosTabela(
         // Get the correct keys based on the day
         const videoKey = diaSemanaIndex === DIAS_REUNIAO.meioSemana ? 'avVideoQui' : 'avVideoDom';
         const indicadorZoomKey = diaSemanaIndex === DIAS_REUNIAO.meioSemana ? 'avIndicadorZoomQui' : 'avIndicadorZoomDom';
-        const backupAVKey = diaSemanaIndex === DIAS_REUNIAO.meioSemana ? 'avBackupQui' : 'avBackupDom';
 
         // Log the actual values being used
         console.log('prepararDadosTabela - AV: Using keys for', dataStr, {
             videoKey,
             indicadorZoomKey,
-            backupAVKey,
             videoValue: designacoesDoDia[videoKey],
             indicadorZoomValue: designacoesDoDia[indicadorZoomKey],
-            backupAVValue: designacoesDoDia[backupAVKey]
         });
 
         const row: Designacao = {
@@ -180,7 +175,6 @@ export function prepararDadosTabela(
             diaSemanaBadgeColor: badgeColorClass,
             video: designacoesDoDia[videoKey] ?? null,
             indicadorZoom: designacoesDoDia[indicadorZoomKey] ?? null,
-            backupAV: designacoesDoDia[backupAVKey] ?? null,
         };
 
         console.log('prepararDadosTabela - AV: Created row', dataStr, ':', row);
