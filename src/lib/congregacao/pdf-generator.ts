@@ -444,11 +444,12 @@ export function generateSchedulePdf(
       textColor: [255, 255, 255],
       fontSize: 8
     },
-    margin: { top: 0, left: margin, right: margin + tableWidth + 15 }, // Usa a margem esquerda e deixa espaço para a tabela da direita
+    margin: { top: 0, left: margin }, // só esquerda
     columnStyles: { 
       0: { cellWidth: dateColWidth },
-      1: { cellWidth: contentColWidth }
+      1: { cellWidth: 'auto' } // Voltar para 'auto'
     },
+    tableWidth: tableWidth, // Adiciona largura explícita para esta tabela
   });
 
   // --- Limpeza Semanal Table (Right) ---
@@ -488,11 +489,12 @@ export function generateSchedulePdf(
       textColor: [255, 255, 255],
       fontSize: 8
     },
-    margin: { top: 0, left: leftMarginSemanal, right: margin }, // Usa a margem esquerda calculada e a margem direita normal
+    margin: { top: 0, left: leftMarginSemanal }, // Usa a margem esquerda calculada e a margem direita normal
     columnStyles: { 
       0: { cellWidth: dateColWidth },
-      1: { cellWidth: contentColWidth } // Corrigido para usar contentColWidth
+      1: { cellWidth: 'auto' } // De volta para 'auto'
     },
+    tableWidth: tableWidth, // Adiciona largura explícita para esta tabela
   });
 
   // Update currentY to the bottom of the taller table
