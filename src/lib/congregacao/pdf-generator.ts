@@ -195,10 +195,12 @@ export function generateSchedulePdf(
     format: 'a4'
   });
 
-  const pageWidth = doc.internal.pageSize.getWidth();
-  const pageHeight = doc.internal.pageSize.getHeight();
   const margin = 40;
+  const pageWidth = doc.internal.pageSize.getWidth();
   const contentWidth = pageWidth - 2 * margin;
+  const dateColWidth = 40; // largura fixa da coluna de data
+  const remainingWidth = contentWidth - dateColWidth;
+  const contentColWidth = remainingWidth / 2; // divide igualmente entre as outras duas colunas
 
   const monthName = NOMES_MESES[month] || 'Mês Desconhecido';
   const mainTitleText = `Designações - ${monthName} de ${year}`;
@@ -214,7 +216,7 @@ export function generateSchedulePdf(
 
   // Helper function to check if we need a new page and reset Y
   const checkAndAddPage = (requiredHeight: number) => {
-    if (currentY + requiredHeight > pageHeight - margin) {
+    if (currentY + requiredHeight > pageWidth - margin) {
       doc.addPage();
       currentY = margin; // Reset Y to top margin
       return true;
@@ -254,6 +256,7 @@ export function generateSchedulePdf(
       ];
     });
 
+    // Tabela de Indicadores
     doc.autoTable({
       startY: currentY,
       head: indicadoresHeaders,
@@ -273,9 +276,9 @@ export function generateSchedulePdf(
       },
       margin: { top: 0, left: margin, right: margin },
       columnStyles: { 
-        0: { cellWidth: 45 },
-        1: { cellWidth: 120 },
-        2: { cellWidth: 120 }
+        0: { cellWidth: dateColWidth },
+        1: { cellWidth: contentColWidth },
+        2: { cellWidth: contentColWidth }
       },
     });
 
@@ -302,6 +305,7 @@ export function generateSchedulePdf(
       ];
     });
 
+    // Tabela de Volantes
     doc.autoTable({
       startY: currentY,
       head: volantesHeaders,
@@ -321,9 +325,9 @@ export function generateSchedulePdf(
       },
       margin: { top: 0, left: margin, right: margin },
       columnStyles: { 
-        0: { cellWidth: 45 },
-        1: { cellWidth: 120 },
-        2: { cellWidth: 120 }
+        0: { cellWidth: dateColWidth },
+        1: { cellWidth: contentColWidth },
+        2: { cellWidth: contentColWidth }
       },
     });
 
@@ -350,6 +354,7 @@ export function generateSchedulePdf(
       ];
     });
 
+    // Tabela de AV
     doc.autoTable({
       startY: currentY,
       head: avHeaders,
@@ -369,9 +374,9 @@ export function generateSchedulePdf(
       },
       margin: { top: 0, left: margin, right: margin },
       columnStyles: { 
-        0: { cellWidth: 45 },
-        1: { cellWidth: 120 },
-        2: { cellWidth: 120 }
+        0: { cellWidth: dateColWidth },
+        1: { cellWidth: contentColWidth },
+        2: { cellWidth: contentColWidth }
       },
     });
 
@@ -386,24 +391,24 @@ export function generateSchedulePdf(
 
   const limpezaSemanalDates = meetingDates.filter(date => date.getUTCDay() === DIAS_REUNIAO.publica);
 
-  if (limpezaPosReuniaoDates.length > 0 || limpezaSemanalDates.length > 0) {
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(11);
-    doc.text('Limpeza', margin, currentY);
-    currentY += 11 * 0.7 + 3;
+  // Garantir que a tabela de Limpeza sempre apareça, mesmo que vazia
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(11);
+  doc.text('Limpeza', margin, currentY);
+  currentY += 11 * 0.7 + 3;
 
-    // Calculate table widths and positions
-    const tableWidth = (contentWidth - 15) / 2;
-    const leftTableX = margin;
-    const rightTableX = margin + tableWidth + 15;
+  // Calculate table widths and positions
+  const tableWidth = (contentWidth - 15) / 2;
+  // const leftTableX = margin; // Não precisamos desta variável
+  // const rightTableX = margin + tableWidth + 15; // Não precisamos desta variável
 
-    // Store initial Y position for both tables
-    const initialY = currentY;
+  // Store initial Y position for both tables
+  const initialY = currentY;
 
-    // --- Limpeza Pós Reunião Table (Left) ---
-    if (limpezaPosReuniaoDates.length > 0) {
-      const limpezaPosReuniaoHeaders = [['Data', 'Grupo (Pós Reunião)']];
-      const limpezaPosReuniaoData = limpezaPosReuniaoDates.map(date => {
+  // --- Limpeza Pós Reunião Table (Left) ---
+  const limpezaPosReuniaoHeaders = [['Data', 'Grupo (Pós Reunião)']];
+  const limpezaPosReuniaoData = limpezaPosReuniaoDates.length > 0
+    ? limpezaPosReuniaoDates.map(date => {
         const dateStr = formatarDataCompleta(date);
         const assignments = schedule[dateStr];
         const diaSemana = date.getUTCDay();
@@ -418,41 +423,40 @@ export function generateSchedulePdf(
         }
 
         return [dataDisplay, posReuniaoGroup];
-      });
+      })
+    : [['--', '--']]; // Se não houver dados, exibe uma linha vazia
 
-      doc.autoTable({
-        startY: currentY,
-        head: limpezaPosReuniaoHeaders,
-        body: limpezaPosReuniaoData,
-        theme: 'grid',
-        styles: { 
-          font: 'helvetica', 
-          fontSize: 8,
-          cellPadding: 2,
-          lineWidth: 0.1,
-          lineColor: [200, 200, 200]
-        },
-        headStyles: { 
-          fillColor: [52, 73, 94], 
-          textColor: [255, 255, 255],
-          fontSize: 8
-        },
-        margin: { top: 0, left: leftTableX, right: rightTableX },
-        tableWidth: tableWidth,
-        columnStyles: {
-          0: { cellWidth: 40 },
-          1: { cellWidth: 'auto' }
-        },
-      });
-    }
+  // Tabela de Limpeza Pós Reunião
+  doc.autoTable({
+    startY: initialY, // Começa na altura inicial
+    head: limpezaPosReuniaoHeaders,
+    body: limpezaPosReuniaoData,
+    theme: 'grid',
+    styles: { 
+      font: 'helvetica', 
+      fontSize: 8,
+      cellPadding: 2,
+      lineWidth: 0.1,
+      lineColor: [200, 200, 200]
+    },
+    headStyles: { 
+      fillColor: [52, 73, 94], 
+      textColor: [255, 255, 255],
+      fontSize: 8
+    },
+    margin: { top: 0, left: margin, right: margin + tableWidth + 15 }, // Usa a margem esquerda e deixa espaço para a tabela da direita
+    columnStyles: { 
+      0: { cellWidth: dateColWidth },
+      1: { cellWidth: contentColWidth }
+    },
+  });
 
-    // --- Limpeza Semanal Table (Right) ---
-    if (limpezaSemanalDates.length > 0) {
-      // Reset Y position to align with left table
-      currentY = initialY;
+  // --- Limpeza Semanal Table (Right) ---
+  // Reset Y position to align with left table - Já garantido com startY = initialY
 
-      const limpezaSemanalHeaders = [['Semana', 'Responsáveis (Semanal)']];
-      const limpezaSemanalData = limpezaSemanalDates.map(date => {
+  const limpezaSemanalHeaders = [['Semana', 'Responsáveis (Semanal)']];
+  const limpezaSemanalData = limpezaSemanalDates.length > 0
+    ? limpezaSemanalDates.map(date => {
         const dateStr = formatarDataCompleta(date);
         const assignments = schedule[dateStr];
         
@@ -460,40 +464,42 @@ export function generateSchedulePdf(
         const weekDisplay = `${date.getUTCDate()}/${(month + 1).toString().padStart(2, '0')}`;
 
         return [weekDisplay, weeklyResponsible];
-      });
+      })
+    : [['--', '--']]; // Se não houver dados, exibe uma linha vazia
 
-      doc.autoTable({
-        startY: currentY,
-        head: limpezaSemanalHeaders,
-        body: limpezaSemanalData,
-        theme: 'grid',
-        styles: { 
-          font: 'helvetica', 
-          fontSize: 8,
-          cellPadding: 2,
-          lineWidth: 0.1,
-          lineColor: [200, 200, 200]
-        },
-        headStyles: { 
-          fillColor: [52, 73, 94], 
-          textColor: [255, 255, 255],
-          fontSize: 8
-        },
-        margin: { top: 0, left: rightTableX, right: margin },
-        tableWidth: tableWidth,
-        columnStyles: {
-          0: { cellWidth: 40 },
-          1: { cellWidth: 'auto' }
-        },
-      });
-    }
+  // Tabela de Limpeza Semanal
+  // Calcule a margem esquerda para a tabela da direita
+  const leftMarginSemanal = margin + tableWidth + 15;
 
-    // Update currentY to the bottom of the taller table
-    currentY = Math.max(
-      (doc as any).lastAutoTable.finalY,
-      currentY
-    ) + 20;
-  }
+  doc.autoTable({
+    startY: initialY, // Começa na mesma altura inicial
+    head: limpezaSemanalHeaders,
+    body: limpezaSemanalData,
+    theme: 'grid',
+    styles: { 
+      font: 'helvetica', 
+      fontSize: 8,
+      cellPadding: 2,
+      lineWidth: 0.1,
+      lineColor: [200, 200, 200]
+    },
+    headStyles: { 
+      fillColor: [52, 73, 94], 
+      textColor: [255, 255, 255],
+      fontSize: 8
+    },
+    margin: { top: 0, left: leftMarginSemanal, right: margin }, // Usa a margem esquerda calculada e a margem direita normal
+    columnStyles: { 
+      0: { cellWidth: dateColWidth },
+      1: { cellWidth: contentColWidth } // Corrigido para usar contentColWidth
+    },
+  });
+
+  // Update currentY to the bottom of the taller table
+  currentY = Math.max(
+    (doc as any).lastAutoTable.finalY,
+    currentY // Use currentY aqui também para garantir que a posição seja atualizada
+  ) + 20;
 
   doc.save(`designacoes_${monthName.toLowerCase().replace(/ç/g, 'c').replace(/ã/g, 'a')}_${year}.pdf`);
 }
