@@ -18,6 +18,7 @@ import { Users, PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
+import { signIn, signOut, useSession } from 'next-auth/react';
 
 // Simple helper to parse YYYY-MM-DD to Date
 const parseDateKey = (dateStr: string): Date | null => {
@@ -29,6 +30,7 @@ const parseDateKey = (dateStr: string): Date | null => {
 };
 
 export default function Home() {
+  const { data: session, status } = useSession();
   const {
     membros,
   } = useMemberManagement();
@@ -157,6 +159,12 @@ export default function Home() {
     <div className="container mx-auto py-8 bg-[#F0F2F5]">
       <h1 className="text-3xl font-bold mb-6">Dashboard</h1>
       
+      {!session && (
+        <div className="flex justify-center mb-6">
+          <Button onClick={() => signIn('google')}>Sign in with Google</Button>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <Card className="bg-white text-black border-none">
           <CardHeader>

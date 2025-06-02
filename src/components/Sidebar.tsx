@@ -1,4 +1,8 @@
+'use client';
+
 import Link from 'next/link';
+import { signOut } from 'next-auth/react';
+import { Button } from '@/components/ui/button';
 
 export default function Sidebar() {
   return (
@@ -28,10 +32,14 @@ export default function Sidebar() {
               Configurações
             </Link>
           </li>
-          <li className="mb-2">
-            <Link href="/sair" className="block py-2 px-4 rounded hover:bg-blue-700">
+          <li className="mt-8">
+            <Button
+              variant="destructive"
+              className="w-full"
+              onClick={() => signOut({ callbackUrl: '/login' })}
+            >
               Sair
-            </Link>
+            </Button>
           </li>
         </ul>
       </nav>

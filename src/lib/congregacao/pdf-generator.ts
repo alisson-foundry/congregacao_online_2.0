@@ -183,7 +183,6 @@ export function generatePublicMeetingPdf(
 }
 
 // Função para Cronograma Principal (Indicadores, Volantes, AV, Limpeza)
-// (Esta função permanece como estava antes, pois não foi fornecida uma nova versão para ela)
 export function generateSchedulePdf(
   schedule: DesignacoesFeitas,
   members: Membro[],
@@ -198,120 +197,179 @@ export function generateSchedulePdf(
 
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
-  const margin = 40; // Increased margin for better appearance
-  const contentWidthMain = pageWidth - 2 * margin; 
+  const margin = 40;
+  const contentWidth = pageWidth - 2 * margin;
 
   const monthName = NOMES_MESES[month] || 'Mês Desconhecido';
-  const mainTitleText = `Cronograma Principal - ${monthName} de ${year}`;
+  const mainTitleText = `Designações - ${monthName} de ${year}`;
 
   // Use a function to get member names safely within the PDF context
   const getMemberNamePdfLocal = (memberId: string | null | undefined): string => {
-    if (!memberId || memberId === NONE_GROUP_ID || memberId.trim() === '') return '-'; // Use '-' for empty/placeholder assignments
+    if (!memberId || memberId === NONE_GROUP_ID || memberId.trim() === '') return '';
     const member = members.find(m => m.id === memberId);
     return member ? member.nome : 'Desconhecido';
   };
-  
-  let currentY_schedule = margin; 
 
-  // Title
+  let currentY = margin;
+
+  // Helper function to check if we need a new page and reset Y
+  const checkAndAddPage = (requiredHeight: number) => {
+    if (currentY + requiredHeight > pageHeight - margin) {
+      doc.addPage();
+      currentY = margin; // Reset Y to top margin
+      return true;
+    }
+    return false;
+  };
+
+  // Title (only on the first page)
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(18);
-  doc.setTextColor(0, 0, 0); // Black text
-  doc.text(mainTitleText, pageWidth / 2, currentY_schedule, { align: 'center' });
-  currentY_schedule += 18 * 0.7 + 20; // Space after title
+  doc.setTextColor(0, 0, 0);
+  doc.text(mainTitleText, pageWidth / 2, currentY, { align: 'center' });
+  currentY += 18 * 0.7 + 30;
 
-  // Define table headers
-  const headers = [['Data', 'Indicador', 'Volante', 'Áudio/Vídeo', 'Leitor', 'Limpeza após Reunião', 'Resp. Limpeza Semanal']];
+  // Filter dates that are meeting days (Thursday or Sunday) and have content
+  const meetingDates = Object.keys(schedule)
+    .map(dateStr => new Date(dateStr + 'T00:00:00Z'))
+    .sort((a, b) => a.getTime() - b.getTime());
 
-  // Prepare table body data
-  const body = Object.keys(schedule)
-    .sort((a, b) => new Date(a).getTime() - new Date(b).getTime())
-    .map(dateStr => {
-      const dateObj = new Date(dateStr + 'T00:00:00Z');
-      const dayOfWeek = dateObj.getUTCDay();
-      const assignmentsForDay = schedule[dateStr];
+  // --- Indicadores Table ---
+  if (meetingDates.length > 0) {
+    // Check and add page if needed before drawing section title
+    checkAndAddPage(14 * 0.7 + 10); // Height needed for section title + space
 
-      // Only include rows for days with assignments or cleaning
-      let hasContentForDay = false;
-      for (const funcId in assignmentsForDay) {
-          if (assignmentsForDay[funcId] && assignmentsForDay[funcId] !== NONE_GROUP_ID) {
-              if (funcId === 'limpezaSemanalResponsavel' && typeof assignmentsForDay[funcId] === 'string' && (assignmentsForDay[funcId] as string).trim() === '') {
-                  // Skip empty weekly cleaning for content check
-              } else {
-                  hasContentForDay = true;
-                  break;
-              }
-          }
-      }
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(14);
+    doc.text('Indicadores', margin, currentY);
+    currentY += 14 * 0.7 + 10;
 
-      // Also include rows for meeting days even if no specific assignment is filled yet,
-      // to show the date clearly in the schedule.
-      const isMeetingDay = dayOfWeek === DIAS_REUNIAO.meioSemana || dayOfWeek === DIAS_REUNIAO.publica;
-
-      if (!hasContentForDay && !isMeetingDay) return null; // Skip dates with no assignments and not meeting days
-
-      const formattedDate = formatarDataCompleta(dateObj); // e.g., Quinta-feira, 25 de Maio
-
-      // Map assignment IDs to column data
-      const rowData = [
-        formattedDate,
-        getMemberNamePdfLocal(assignmentsForDay?.['indicadorQui'] || assignmentsForDay?.['indicadorDom']), // Indicador (handles both days)
-        getMemberNamePdfLocal(assignmentsForDay?.['volanteQui'] || assignmentsForDay?.['volanteDom']), // Volante (handles both days)
-        getMemberNamePdfLocal(assignmentsForDay?.['audioVideoQui'] || assignmentsForDay?.['audioVideoDom']), // AV (handles both days)
-        getMemberNamePdfLocal(assignmentsForDay?.['leitorQui'] || assignmentsForDay?.['leitorDom']), // Leitor (handles both days)
-        getMemberNamePdfLocal(assignmentsForDay?.['limpezaAposReuniaoGrupoId']), // Limpeza após Reunião
-        getMemberNamePdfLocal(assignmentsForDay?.['limpezaSemanalResponsavel']), // Responsável Limpeza Semanal
+    const indicadoresHeaders = [['Data', 'Indicador 1', 'Indicador 2']];
+    const indicadoresData = meetingDates.map(date => {
+      const dateStr = formatarDataCompleta(date);
+      const assignments = schedule[dateStr];
+      return [
+        formatarDataCompleta(date),
+        getMemberNamePdfLocal(assignments?.['indicador1']),
+        getMemberNamePdfLocal(assignments?.['indicador2'])
       ];
+    });
 
-      // If it's a meeting day but no specific assignments are filled,
-      // ensure the date is shown but other fields are empty.
-      if (isMeetingDay && !hasContentForDay) {
-          return [formattedDate, '-', '-', '-', '-', '-', '-'];
-      }
+    const result = (doc as any).autoTable({
+      head: indicadoresHeaders,
+      body: indicadoresData,
+      startY: currentY,
+      margin: { left: margin },
+      theme: 'grid',
+      styles: { fontSize: 10 },
+      headStyles: { fillColor: [41, 128, 185] }
+    });
 
-      return rowData;
-    })
-    .filter(row => row !== null); // Remove null entries (dates with no content)
+    currentY = result.finalY + 20;
+  }
 
+  // --- Volantes Table ---
+  if (meetingDates.length > 0) {
+    // Check and add page if needed before drawing section title
+    checkAndAddPage(14 * 0.7 + 10); // Height needed for section title + space
 
-  // Add the table
-  // Documentation for autoTable styles: https://github.com/simonbengtsson/jsPDF-AutoTable/blob/master/examples/html.html
-  doc.autoTable({
-    head: headers,
-    body: body,
-    startY: currentY_schedule,
-    theme: 'grid', // Use 'grid' theme for borders
-    headStyles: {
-      fillColor: [220, 220, 220], // Light gray background for header
-      textColor: [0, 0, 0], // Black text
-      fontStyle: 'bold',
-      halign: 'center',
-    },
-    bodyStyles: {
-      textColor: [0, 0, 0], // Black text for body
-    },
-    alternateRowStyles: { // Optional: alternate row background color
-        fillColor: [245, 245, 245], // Very light gray
-    },
-    columnStyles: {
-      0: { cellWidth: 80 }, // Data column width
-      // Adjust other column widths as needed, or let autoTable handle them
-    },
-    didDrawPage: (data: any) => {
-      // Footer - Page Number
-      let footerY = pageHeight - margin / 2;
-      let pageNumberText = `Página ${data.pageNumber}`;
-      doc.setFontSize(8);
-      doc.setTextColor(100);
-      doc.text(pageNumberText, pageWidth / 2, footerY, { align: 'center' });
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(14);
+    doc.text('Volantes', margin, currentY);
+    currentY += 14 * 0.7 + 10;
 
-      // Add APP_NAME in the footer
-      doc.text(APP_NAME, margin, footerY, { align: 'left' });
-    }
-  });
+    const volantesHeaders = [['Data', 'Volante 1', 'Volante 2']];
+    const volantesData = meetingDates.map(date => {
+      const dateStr = formatarDataCompleta(date);
+      const assignments = schedule[dateStr];
+      return [
+        formatarDataCompleta(date),
+        getMemberNamePdfLocal(assignments?.['volante1']),
+        getMemberNamePdfLocal(assignments?.['volante2'])
+      ];
+    });
 
-  // Save the PDF
-  doc.save(`cronograma_principal_${monthName.toLowerCase().replace(/ç/g, 'c').replace(/ã/g, 'a')}_${year}.pdf`);
+    const result = (doc as any).autoTable({
+      head: volantesHeaders,
+      body: volantesData,
+      startY: currentY,
+      margin: { left: margin },
+      theme: 'grid',
+      styles: { fontSize: 10 },
+      headStyles: { fillColor: [41, 128, 185] }
+    });
+
+    currentY = result.finalY + 20;
+  }
+
+  // --- AV Table ---
+  if (meetingDates.length > 0) {
+     // Check and add page if needed before drawing section title
+     checkAndAddPage(14 * 0.7 + 10); // Height needed for section title + space
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(14);
+    doc.text('Auxiliar de Vídeo', margin, currentY);
+    currentY += 14 * 0.7 + 10;
+
+    const avHeaders = [['Data', 'Auxiliar de Vídeo']];
+    const avData = meetingDates.map(date => {
+      const dateStr = formatarDataCompleta(date);
+      const assignments = schedule[dateStr];
+      return [
+        formatarDataCompleta(date),
+        getMemberNamePdfLocal(assignments?.['av'])
+      ];
+    });
+
+    const result = (doc as any).autoTable({
+      head: avHeaders,
+      body: avData,
+      startY: currentY,
+      margin: { left: margin },
+      theme: 'grid',
+      styles: { fontSize: 10 },
+      headStyles: { fillColor: [41, 128, 185] }
+    });
+
+    currentY = result.finalY + 20;
+  }
+
+  // --- Limpeza Table ---
+  if (meetingDates.length > 0) {
+    // Check and add page if needed before drawing section title
+    checkAndAddPage(14 * 0.7 + 10); // Height needed for section title + space
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(14);
+    doc.text('Limpeza', margin, currentY);
+    currentY += 14 * 0.7 + 10;
+
+    const limpezaHeaders = [['Data', 'Responsável', 'Grupo']];
+    const limpezaData = meetingDates.map(date => {
+      const dateStr = formatarDataCompleta(date);
+      const assignments = schedule[dateStr];
+      return [
+        formatarDataCompleta(date),
+        getMemberNamePdfLocal(assignments?.['limpezaSemanalResponsavel']),
+        getMemberNamePdfLocal(assignments?.['limpezaAposReuniaoGrupoId'])
+      ];
+    });
+
+    const result = (doc as any).autoTable({
+      head: limpezaHeaders,
+      body: limpezaData,
+      startY: currentY,
+      margin: { left: margin },
+      theme: 'grid',
+      styles: { fontSize: 10 },
+      headStyles: { fillColor: [41, 128, 185] }
+    });
+
+    currentY = result.finalY + 20;
+  }
+
+  doc.save(`designacoes_${monthName.toLowerCase().replace(/ç/g, 'c').replace(/ã/g, 'a')}_${year}.pdf`);
 }
 
 // Constantes para o PDF do NVMC

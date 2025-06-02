@@ -1,4 +1,3 @@
-
 export interface PermissaoBase {
   id: string;
   nome: string;
@@ -36,7 +35,7 @@ export interface DesignacoesFeitas {
   // Key: "YYYY-MM-DD"
   [dataStr: string]: {
     // Key: idFuncao
-    [funcaoId: string]: string | null; // Value: idMembro or null if unassigned
+    [funcaoId: string]: string | null | undefined; // Allow undefined here
     limpezaAposReuniaoGrupoId?: string | null; // This can be null, string or undefined
     limpezaSemanalResponsavel?: string | null; // This can be null, string or undefined
   };
@@ -128,6 +127,7 @@ export interface NVMCDailyAssignments {
   ebcCustomTitle?: string;
   // Encerramento
   comentariosFinaisDetalhes?: string; // Formato: (X min) | Cântico Y e Oração
+  canticoFinalNumero?: string;
   oracaoFinalId?: string | null;
 }
 

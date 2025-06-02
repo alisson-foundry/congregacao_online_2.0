@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -11,9 +10,8 @@ import type { DesignacoesFeitas, FuncaoDesignada, Membro, SubstitutionDetails } 
 import { ScheduleDisplay } from './ScheduleDisplay';
 import { MemberSelectionDialog } from './MemberSelectionDialog';
 import { useToast } from "@/hooks/use-toast";
-import { FileText, AlertTriangle, Loader2, UserPlus, Info } from 'lucide-react';
+import { AlertTriangle, Loader2, UserPlus, Info } from 'lucide-react';
 import { getPermissaoRequerida, formatarDataCompleta } from '@/lib/congregacao/utils';
-import { generateSchedulePdf } from '@/lib/congregacao/pdf-generator';
 
 interface AVSelectionContext {
   dateStr: string;
@@ -161,29 +159,6 @@ export function ScheduleGenerationCard({
     }
   };
 
-  const handleExportPDF = () => {
-    if (currentSchedule && currentMes !== null && currentAno !== null && membros.length > 0) {
-      try {
-        generateSchedulePdf(
-          currentSchedule,
-          membros,
-          currentMes,
-          currentAno
-        );
-        toast({ title: "PDF Gerado", description: "O download do PDF deve iniciar em breve." });
-      } catch (e: any) {
-        console.error("Erro ao gerar PDF:", e);
-        toast({ title: "Erro ao Gerar PDF", description: e.message || "Não foi possível gerar o PDF.", variant: "destructive" });
-      }
-    } else {
-      toast({
-        title: "Dados Insuficientes",
-        description: "Gere o cronograma ou adicione membros antes de exportar.",
-        variant: "default",
-      });
-    }
-  };
-
   const handleOpenAVMemberSelection = (
     dateStr: string,
     functionId: string,
@@ -275,8 +250,7 @@ export function ScheduleGenerationCard({
             disabled={isLoading || status === 'rascunho' || status === 'finalizado'}
             className="w-full sm:w-auto"
           >
-            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileText className="mr-2 h-4 w-4" />}
-            {isLoading ? 'Gerando...' : 'Gerar Cronograma (Indicadores/Volantes)'}
+            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Gerar Cronograma (Indicadores/Volantes)'}
           </Button>
         </div>
 
@@ -333,11 +307,6 @@ export function ScheduleGenerationCard({
                   </Button>
                 </div>
               )}
-              <div className="mt-6 text-center">
-                <Button variant="outline" onClick={handleExportPDF} disabled={!currentSchedule || isLoading}>
-                  <FileText className="mr-2 h-4 w-4" /> Exportar como PDF
-                </Button>
-              </div>
             </>
           )}
           {!isLoading && !currentSchedule && !error && !status && (

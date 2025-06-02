@@ -1,4 +1,3 @@
-
 'use client';
 
 import React from 'react';
@@ -86,8 +85,8 @@ export function prepararDadosTabela(
         const diaSemanaIndex = dataObj.getUTCDay();
         return {
             ...row,
-            indicadorExterno: row[MAPPED_COL_KEYS_INDICADORES.indicadorExterno(diaSemanaIndex)],
-            indicadorPalco: row[MAPPED_COL_KEYS_INDICADORES.indicadorPalco(diaSemanaIndex)],
+            indicadorExterno: row[MAPPED_COL_KEYS_INDICADORES.indicadorExterno(diaSemanaIndex)] ?? null,
+            indicadorPalco: row[MAPPED_COL_KEYS_INDICADORES.indicadorPalco(diaSemanaIndex)] ?? null,
         }
       });
       return { data: remappedDataIndicadores, columns, fullDateStrings };
@@ -130,8 +129,8 @@ export function prepararDadosTabela(
         const diaSemanaIndex = dataObj.getUTCDay();
         return {
             ...row,
-            volante1: row[MAPPED_COL_KEYS_VOLANTES.volante1(diaSemanaIndex)],
-            volante2: row[MAPPED_COL_KEYS_VOLANTES.volante2(diaSemanaIndex)],
+            volante1: row[MAPPED_COL_KEYS_VOLANTES.volante1(diaSemanaIndex)] ?? null,
+            volante2: row[MAPPED_COL_KEYS_VOLANTES.volante2(diaSemanaIndex)] ?? null,
         }
       });
     return { data: remappedDataVolantes, columns, fullDateStrings };
@@ -177,9 +176,9 @@ export function prepararDadosTabela(
         const diaSemanaIndex = dataObj.getUTCDay();
         return {
             ...row,
-            video: row[MAPPED_COL_KEYS_AV.video(diaSemanaIndex)],
-            indicadorZoom: row[MAPPED_COL_KEYS_AV.indicadorZoom(diaSemanaIndex)],
-            backupAV: row[MAPPED_COL_KEYS_AV.backupAV(diaSemanaIndex)],
+            video: row[MAPPED_COL_KEYS_AV.video(diaSemanaIndex)] ?? null,
+            indicadorZoom: row[MAPPED_COL_KEYS_AV.indicadorZoom(diaSemanaIndex)] ?? null,
+            backupAV: row[MAPPED_COL_KEYS_AV.backupAV(diaSemanaIndex)] ?? null,
         };
     });
     return { data: remappedDataAV, columns, fullDateStrings };
