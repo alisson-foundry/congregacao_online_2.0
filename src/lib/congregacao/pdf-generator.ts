@@ -225,12 +225,22 @@ export async function generateMainSchedulePDF(
     return false;
   };
 
-  // Title
+  // Draw header band
+  const headerBandHeight = 40;
+  doc.setFillColor(41, 128, 185); // Same blue as table headers
+  doc.rect(0, 0, pageWidth, headerBandHeight, 'F');
+
+  // Title in header band
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(16);
+  doc.setTextColor(255, 255, 255); // White text
+  doc.text(mainTitleText, pageWidth / 2, headerBandHeight / 2 + 5, { align: 'center' });
+
+  // Reset text color to black for the rest of the content
   doc.setTextColor(0, 0, 0);
-  doc.text(mainTitleText, pageWidth / 2, currentY, { align: 'center' });
-  currentY += 16 * 0.7 + 14; // Increased spacing after title
+  
+  // Set initial Y position after header band
+  currentY = headerBandHeight + 40; // Add extra space after header band
 
   // Filter dates that are meeting days (Thursday or Sunday) and have content
   const meetingDates = Object.keys(designacoesFeitas)
