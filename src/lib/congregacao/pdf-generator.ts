@@ -197,10 +197,11 @@ export async function generateMainSchedulePDF(
     format: 'a4'
   });
 
-  const margin = 40;
+  const margin = 20; // Updated margin to 20 points
   const pageWidth = doc.internal.pageSize.getWidth();
   const contentWidth = pageWidth - 2 * margin;
-  const dateColWidth = 60; // Ajuste para acomodar datas formatadas
+  const dateColWidth = 40; // Width for date column
+  const contentColWidth = (contentWidth - dateColWidth) / 2; // Width for content columns
 
   const monthName = NOMES_MESES[mes] || 'Mês Desconhecido';
   const mainTitleText = `Designações - ${monthName} de ${ano}`;
@@ -218,18 +219,18 @@ export async function generateMainSchedulePDF(
   const checkAndAddPage = (requiredHeight: number) => {
     if (currentY + requiredHeight > doc.internal.pageSize.getHeight() - margin) {
       doc.addPage();
-      currentY = margin; // Reset Y to top margin
+      currentY = margin;
       return true;
     }
     return false;
   };
 
-  // Title (only on the first page)
+  // Title
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(16);
   doc.setTextColor(0, 0, 0);
   doc.text(mainTitleText, pageWidth / 2, currentY, { align: 'center' });
-  currentY += 16 * 0.7 + 20; // Increased spacing after title
+  currentY += 16 * 0.7 + 14; // Increased spacing after title
 
   // Filter dates that are meeting days (Thursday or Sunday) and have content
   const meetingDates = Object.keys(designacoesFeitas)
@@ -239,11 +240,11 @@ export async function generateMainSchedulePDF(
 
   // --- Indicadores Table ---
   if (meetingDates.length > 0) {
-    checkAndAddPage(100); // Estimate required height
+    checkAndAddPage(100);
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(12);
+    doc.setFontSize(14);
     doc.text('Indicadores', margin, currentY);
-    currentY += 12 * 0.7 + 5; // Spacing after section title
+    currentY += 14 * 0.7 + 3;
 
     const indicadoresHeaders = [['Data', 'Indicador Externo', 'Indicador Palco']];
     const indicadoresData = meetingDates.map(date => {
@@ -268,37 +269,34 @@ export async function generateMainSchedulePDF(
       theme: 'grid',
       styles: { 
         font: 'helvetica', 
-        fontSize: 9,
-        cellPadding: 3,
+        fontSize: 8,
+        cellPadding: 2,
         lineWidth: 0.1,
         lineColor: [200, 200, 200]
       },
       headStyles: { 
         fillColor: [41, 128, 185], 
         textColor: [255, 255, 255],
-        fontSize: 9
+        fontSize: 8
       },
       margin: { top: 0, left: margin, right: margin },
       columnStyles: { 
         0: { cellWidth: dateColWidth },
-      },
-      didDrawPage: (data: any) => { // Add header/footer if needed on subsequent pages
-        // if (data.pageNumber > 1) {
-        //   doc.text(mainTitleText, pageWidth / 2, margin / 2, { align: 'center' });
-        // }
+        1: { cellWidth: contentColWidth },
+        2: { cellWidth: contentColWidth }
       }
     });
 
-    currentY = (doc as any).lastAutoTable.finalY + 20; // Spacing after table
+    currentY = (doc as any).lastAutoTable.finalY + 20;
   }
 
   // --- Volantes Table ---
   if (meetingDates.length > 0) {
-    checkAndAddPage(100); // Estimate required height
+    checkAndAddPage(100);
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(12);
+    doc.setFontSize(14);
     doc.text('Volantes', margin, currentY);
-    currentY += 12 * 0.7 + 5; // Spacing after section title
+    currentY += 14 * 0.7 + 3;
 
     const volantesHeaders = [['Data', 'Volante 1', 'Volante 2']];
     const volantesData = meetingDates.map(date => {
@@ -323,105 +321,98 @@ export async function generateMainSchedulePDF(
       theme: 'grid',
       styles: { 
         font: 'helvetica', 
-        fontSize: 9,
-        cellPadding: 3,
+        fontSize: 8,
+        cellPadding: 2,
         lineWidth: 0.1,
         lineColor: [200, 200, 200]
       },
       headStyles: { 
         fillColor: [41, 128, 185], 
         textColor: [255, 255, 255],
-        fontSize: 9
+        fontSize: 8
       },
       margin: { top: 0, left: margin, right: margin },
       columnStyles: { 
         0: { cellWidth: dateColWidth },
-      },
-      didDrawPage: (data: any) => {
-        // if (data.pageNumber > 1) {
-        //   doc.text(mainTitleText, pageWidth / 2, margin / 2, { align: 'center' });
-        // }
+        1: { cellWidth: contentColWidth },
+        2: { cellWidth: contentColWidth }
       }
     });
 
-    currentY = (doc as any).lastAutoTable.finalY + 20; // Spacing after table
+    currentY = (doc as any).lastAutoTable.finalY + 20;
   }
 
-    // --- AV Table ---
-    if (meetingDates.length > 0) {
-      checkAndAddPage(100); // Estimate required height
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(12);
-      doc.text('AV', margin, currentY);
-      currentY += 12 * 0.7 + 5; // Spacing after section title
-  
-      const avHeaders = [['Data', 'AV', 'Indicador Zoom']];
-      const avData = meetingDates.map(date => {
-        const dateStr = formatarDataCompleta(date);
-        const assignments = designacoesFeitas[dateStr];
-        const isMeioSemana = date.getUTCDay() === DIAS_REUNIAO.meioSemana;
-        
-        const avId = isMeioSemana ? 'avQui' : 'avDom';
-        const indicadorZoomId = isMeioSemana ? 'indicadorZoomQui' : 'indicadorZoomDom';
-        
-        return [
-          format(date, "dd/MM", { locale: ptBR }),
-          getLocalMemberName(assignments?.[avId]),
-          getLocalMemberName(assignments?.[indicadorZoomId]),
-        ];
-      });
-  
-      doc.autoTable({
-        startY: currentY,
-        head: avHeaders,
-        body: avData,
-        theme: 'grid',
-        styles: { 
-          font: 'helvetica', 
-          fontSize: 9,
-          cellPadding: 3,
-          lineWidth: 0.1,
-          lineColor: [200, 200, 200]
-        },
-        headStyles: { 
-          fillColor: [41, 128, 185], 
-          textColor: [255, 255, 255],
-          fontSize: 9
-        },
-        margin: { top: 0, left: margin, right: margin },
-        columnStyles: { 
-          0: { cellWidth: dateColWidth },
-        },
-        didDrawPage: (data: any) => {
-          // if (data.pageNumber > 1) {
-          //   doc.text(mainTitleText, pageWidth / 2, margin / 2, { align: 'center' });
-          // }
-        }
-      });
-  
-      currentY = (doc as any).lastAutoTable.finalY + 20; // Spacing after table
-    }
+  // --- AV Table ---
+  if (meetingDates.length > 0) {
+    checkAndAddPage(100);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(14);
+    doc.text('AV', margin, currentY);
+    currentY += 14 * 0.7 + 3;
 
-  // --- Leitura/Presidência Table ---
-  // Decide if you want to include this. The previous version had it.
-  // If included, replicate the structure above.
+    const avHeaders = [['Data', 'AV', 'Indicador Zoom']];
+    const avData = meetingDates.map(date => {
+      const dateStr = formatarDataCompleta(date);
+      const assignments = designacoesFeitas[dateStr];
+      const isMeioSemana = date.getUTCDay() === DIAS_REUNIAO.meioSemana;
+      
+      const avId = isMeioSemana ? 'avQui' : 'avDom';
+      const indicadorZoomId = isMeioSemana ? 'indicadorZoomQui' : 'indicadorZoomDom';
+      
+      return [
+        format(date, "dd/MM", { locale: ptBR }),
+        getLocalMemberName(assignments?.[avId]),
+        getLocalMemberName(assignments?.[indicadorZoomId]),
+      ];
+    });
 
-  // --- Limpeza Table ---
-  // Limpeza Após Reunião
+    doc.autoTable({
+      startY: currentY,
+      head: avHeaders,
+      body: avData,
+      theme: 'grid',
+      styles: { 
+        font: 'helvetica', 
+        fontSize: 8,
+        cellPadding: 2,
+        lineWidth: 0.1,
+        lineColor: [200, 200, 200]
+      },
+      headStyles: { 
+        fillColor: [41, 128, 185], 
+        textColor: [255, 255, 255],
+        fontSize: 8
+      },
+      margin: { top: 0, left: margin, right: margin },
+      columnStyles: { 
+        0: { cellWidth: dateColWidth },
+        1: { cellWidth: contentColWidth },
+        2: { cellWidth: contentColWidth }
+      }
+    });
+
+    currentY = (doc as any).lastAutoTable.finalY + 20;
+  }
+
+  // --- Limpeza Tables ---
   const datesWithLimpezaAposReuniao = Object.keys(designacoesFeitas)
-  .map(dateStr => new Date(dateStr + "T00:00:00Z"))
-  .filter(dateObj => {
-    const dateStr = formatarDataCompleta(dateObj);
-    return designacoesFeitas[dateStr]?.limpezaAposReuniaoGrupoId && designacoesFeitas[dateStr].limpezaAposReuniaoGrupoId !== NONE_GROUP_ID;
-  })
-  .sort((a, b) => a.getTime() - b.getTime());
+    .map(dateStr => new Date(dateStr + "T00:00:00Z"))
+    .filter(dateObj => {
+      const dateStr = formatarDataCompleta(dateObj);
+      return designacoesFeitas[dateStr]?.limpezaAposReuniaoGrupoId && designacoesFeitas[dateStr].limpezaAposReuniaoGrupoId !== NONE_GROUP_ID;
+    })
+    .sort((a, b) => a.getTime() - b.getTime());
 
   if (datesWithLimpezaAposReuniao.length > 0) {
-    checkAndAddPage(100); // Estimate required height
+    checkAndAddPage(100);
+    const tableWidth = (contentWidth - 15) / 2;
+    const tableStartY = currentY;
+
+    // Limpeza Após Reunião
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(12);
-    doc.text('Limpeza Após Reunião', margin, currentY);
-    currentY += 12 * 0.7 + 5; // Spacing after section title
+    doc.setFontSize(14);
+    doc.text('Limpeza Após Reunião', margin, tableStartY);
+    currentY += 14 * 0.7 + 3;
 
     const limpezaAposHeaders = [['Data', 'Grupo de Limpeza']];
     const limpezaAposData = datesWithLimpezaAposReuniao.map(date => {
@@ -447,87 +438,81 @@ export async function generateMainSchedulePDF(
       theme: 'grid',
       styles: { 
         font: 'helvetica', 
-        fontSize: 9,
-        cellPadding: 3,
+        fontSize: 8,
+        cellPadding: 2,
         lineWidth: 0.1,
         lineColor: [200, 200, 200]
       },
       headStyles: { 
         fillColor: [41, 128, 185], 
         textColor: [255, 255, 255],
-        fontSize: 9
+        fontSize: 8
       },
-      margin: { top: 0, left: margin, right: margin },
+      margin: { top: 0, left: margin },
+      tableWidth: tableWidth,
       columnStyles: { 
         0: { cellWidth: dateColWidth },
-      },
-      didDrawPage: (data: any) => {
-        // if (data.pageNumber > 1) {
-        //   doc.text(mainTitleText, pageWidth / 2, margin / 2, { align: 'center' });
-        // }
+        1: { cellWidth: 'auto' }
       }
     });
 
-    currentY = (doc as any).lastAutoTable.finalY + 20; // Spacing after table
-  }
+    // Limpeza Semanal
+    const weeksWithLimpezaSemanal = Object.keys(designacoesFeitas)
+      .map(dateStr => new Date(dateStr + "T00:00:00Z"))
+      .filter(dateObj => {
+        const dateStr = formatarDataCompleta(dateObj);
+        return designacoesFeitas[dateStr]?.limpezaSemanalResponsavel && designacoesFeitas[dateStr]?.limpezaSemanalResponsavel.trim() !== '';
+      })
+      .sort((a, b) => a.getTime() - b.getTime());
 
-  // Limpeza Semanal
-  const weeksWithLimpezaSemanal = Object.keys(designacoesFeitas)
-  .map(dateStr => new Date(dateStr + "T00:00:00Z")) // These are the start dates of the weeks (Sundays)
-  .filter(dateObj => {
-    const dateStr = formatarDataCompleta(dateObj);
-    return designacoesFeitas[dateStr]?.limpezaSemanalResponsavel && designacoesFeitas[dateStr]?.limpezaSemanalResponsavel.trim() !== '';
-  })
-  .sort((a, b) => a.getTime() - b.getTime());
+    if (weeksWithLimpezaSemanal.length > 0) {
+      // Reset Y position to match the first table
+      currentY = tableStartY;
+      
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(14);
+      doc.text('Limpeza Semanal', margin + tableWidth + 15, currentY);
+      currentY += 14 * 0.7 + 3;
 
-  if (weeksWithLimpezaSemanal.length > 0) {
-    checkAndAddPage(100); // Estimate required height
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(12);
-    doc.text('Limpeza Semanal (Responsável)', margin, currentY);
-    currentY += 12 * 0.7 + 5; // Spacing after section title
+      const limpezaSemanalHeaders = [['Semana', 'Responsável']];
+      const limpezaSemanalData = weeksWithLimpezaSemanal.map(date => {
+        const dateStr = formatarDataCompleta(date);
+        const assignments = designacoesFeitas[dateStr];
+        const responsible = assignments?.limpezaSemanalResponsavel || '--';
 
-    const limpezaSemanalHeaders = [['Semana (Início)', 'Responsável']];
-    const limpezaSemanalData = weeksWithLimpezaSemanal.map(date => {
-      const dateStr = formatarDataCompleta(date);
-      const assignments = designacoesFeitas[dateStr];
-      const responsible = assignments?.limpezaSemanalResponsavel || '--';
+        return [
+          format(date, "dd/MM", { locale: ptBR }),
+          responsible
+        ];
+      });
 
-      return [
-        format(date, "dd/MM/yyyy", { locale: ptBR }), // Format the start date of the week
-        responsible
-      ];
-    });
+      doc.autoTable({
+        startY: currentY,
+        head: limpezaSemanalHeaders,
+        body: limpezaSemanalData,
+        theme: 'grid',
+        styles: { 
+          font: 'helvetica', 
+          fontSize: 8,
+          cellPadding: 2,
+          lineWidth: 0.1,
+          lineColor: [200, 200, 200]
+        },
+        headStyles: { 
+          fillColor: [41, 128, 185], 
+          textColor: [255, 255, 255],
+          fontSize: 8
+        },
+        margin: { top: 0, left: margin + tableWidth + 15 },
+        tableWidth: tableWidth,
+        columnStyles: { 
+          0: { cellWidth: dateColWidth },
+          1: { cellWidth: 'auto' }
+        }
+      });
 
-    doc.autoTable({
-      startY: currentY,
-      head: limpezaSemanalHeaders,
-      body: limpezaSemanalData,
-      theme: 'grid',
-      styles: { 
-        font: 'helvetica', 
-        fontSize: 9,
-        cellPadding: 3,
-        lineWidth: 0.1,
-        lineColor: [200, 200, 200]
-      },
-      headStyles: { 
-        fillColor: [41, 128, 185], 
-        textColor: [255, 255, 255],
-        fontSize: 9
-      },
-      margin: { top: 0, left: margin, right: margin },
-      columnStyles: { 
-        0: { cellWidth: dateColWidth },
-      },
-      didDrawPage: (data: any) => {
-        // if (data.pageNumber > 1) {
-        //   doc.text(mainTitleText, pageWidth / 2, margin / 2, { align: 'center' });
-        // }
-      }
-    });
-
-    currentY = (doc as any).lastAutoTable.finalY + 20; // Spacing after table
+      currentY = Math.max((doc as any).lastAutoTable.finalY, currentY) + 20;
+    }
   }
 
   const monthNameLower = NOMES_MESES[mes].toLowerCase().replace(/ç/g, 'c').replace(/ã/g, 'a');
