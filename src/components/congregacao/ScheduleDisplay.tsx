@@ -407,9 +407,14 @@ export function ScheduleDisplay({
         </>
       )}
 
-      <Card>
+      {/* Seção de Limpeza - Ajustada para layout similar */}
+      <Card className="flex-1 min-w-[300px]">
+        <CardHeader>
+          <CardTitle className="text-lg">Limpeza</CardTitle>
+        </CardHeader>
         <CardContent className="pt-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Limpeza Após a Reunião */}
             <div className="flex-1 space-y-3 min-w-[280px]">
               <h4 className="font-medium text-md text-foreground">Limpeza Após a Reunião</h4>
               <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
@@ -447,6 +452,7 @@ export function ScheduleDisplay({
               </div>
             </div>
 
+            {/* Limpeza Semanal */}
             <div className="flex-1 space-y-3 min-w-[280px]">
               <h4 className="font-medium text-md text-foreground">Limpeza Semanal</h4>
               <div className="space-y-2 max-h-60 overflow-y-auto pr-2">

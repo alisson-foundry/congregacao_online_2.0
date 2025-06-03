@@ -18,6 +18,7 @@ interface ScheduleTableProps {
   onCellClick?: (date: string, columnKey: string, originalMemberId: string | null, originalMemberName: string | null, tableTitle: string, finalized: boolean) => void;
   currentFullDateStrings: string[];
   isReadOnly: boolean;
+  customContent?: React.ReactNode;
 }
 
 export function ScheduleTable({
@@ -28,6 +29,7 @@ export function ScheduleTable({
   onCellClick,
   currentFullDateStrings,
   isReadOnly,
+  customContent,
 }: ScheduleTableProps) {
   
   const getMemberName = (memberId: string | null): string | null => {
@@ -38,7 +40,7 @@ export function ScheduleTable({
 
   const noDataForTable = !data || data.length === 0;
 
-  if (noDataForTable) {
+  if (noDataForTable && !customContent) {
     return (
       <Card className="flex-1 min-w-[300px]">
         <CardHeader>
@@ -57,65 +59,69 @@ export function ScheduleTable({
         <CardTitle className="text-lg">{title}</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="overflow-x-auto rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                {columns.map((col) => (
-                  <TableHead 
-                    key={col.key}
-                  >
-                    {col.label}
-                  </TableHead>
-                ))}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {data.map((row, rowIndex) => (
-                <TableRow key={rowIndex}>
-                  {columns.map((col) => {
-                    const memberId = row[col.key] as string | null;
-                    const memberName = getMemberName(memberId);
-                    const fullDateStr = currentFullDateStrings[rowIndex]; 
+        {customContent ? (
+          customContent
+        ) : (
+          <div className="overflow-x-auto rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  {columns.map((col) => (
+                    <TableHead 
+                      key={col.key}
+                    >
+                      {col.label}
+                    </TableHead>
+                  ))}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {data.map((row, rowIndex) => (
+                  <TableRow key={rowIndex}>
+                    {columns.map((col) => {
+                      const memberId = row[col.key] as string | null;
+                      const memberName = getMemberName(memberId);
+                      const fullDateStr = currentFullDateStrings[rowIndex]; 
 
-                    if (col.key === 'data') {
+                      if (col.key === 'data') {
+                        return (
+                          <TableCell key={col.key}>
+                            <div className="flex items-center space-x-2">
+                               <span>{row.data.split(' ')[0]}</span>
+                               <Badge variant="outline" className={row.diaSemanaBadgeColor}>{row.data.split(' ')[1]}</Badge>
+                            </div>
+                          </TableCell>
+                        );
+                      }
+
                       return (
-                        <TableCell key={col.key}>
-                          <div className="flex items-center space-x-2">
-                             <span>{row.data.split(' ')[0]}</span>
-                             <Badge variant="outline" className={row.diaSemanaBadgeColor}>{row.data.split(' ')[1]}</Badge>
-                          </div>
+                        <TableCell 
+                          key={col.key}
+                        >
+                          {onCellClick && !isReadOnly ? (
+                            <Button
+                              variant="link"
+                              className="p-0 h-auto text-sm font-normal text-primary hover:underline w-full justify-start"
+                              onClick={() => {
+                                if (onCellClick && fullDateStr) {
+                                  onCellClick(fullDateStr, col.key, memberId, memberName, title, false);
+                                }
+                              }}
+                            >
+                              {memberName || '--'}
+                            </Button>
+                          ) : (
+                            memberName || '--'
+                          )}
                         </TableCell>
                       );
-                    }
-
-                    return (
-                      <TableCell 
-                        key={col.key}
-                      >
-                        {onCellClick && !isReadOnly ? (
-                          <Button
-                            variant="link"
-                            className="p-0 h-auto text-sm font-normal text-primary hover:underline w-full justify-start"
-                            onClick={() => {
-                              if (onCellClick && fullDateStr) {
-                                onCellClick(fullDateStr, col.key, memberId, memberName, title, false);
-                              }
-                            }}
-                          >
-                            {memberName || '--'}
-                          </Button>
-                        ) : (
-                          memberName || '--'
-                        )}
-                      </TableCell>
-                    );
-                  })}
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+                    })}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

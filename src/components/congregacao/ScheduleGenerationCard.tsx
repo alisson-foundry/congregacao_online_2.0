@@ -12,7 +12,7 @@ import { MemberSelectionDialog } from './MemberSelectionDialog';
 import { useToast } from "@/hooks/use-toast";
 import { AlertTriangle, Loader2, UserPlus, Info } from 'lucide-react';
 import { getPermissaoRequerida, formatarDataCompleta } from '@/lib/congregacao/utils';
-import { generateSchedulePdf } from '@/lib/congregacao/pdf-generator';
+import { generateMainSchedulePDF } from '@/lib/congregacao/pdf-generator';
 
 interface AVSelectionContext {
   dateStr: string;
@@ -62,6 +62,36 @@ export function ScheduleGenerationCard({
     }
     setError(null);
   }, [currentMes, currentAno]);
+
+  const handleExportPDF = async () => {
+    if (!currentSchedule || currentMes === null || currentAno === null || !membros) {
+      toast({
+        title: "Erro ao gerar PDF",
+        description: "Dados insuficientes para gerar o PDF.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      // Chamar a função de geração de PDF
+      await generateMainSchedulePDF(currentSchedule, currentMes, currentAno, membros);
+      toast({
+        title: "PDF gerado com sucesso!",
+        description: `O arquivo designacoes_${NOMES_MESES[currentMes].toLowerCase()}_${currentAno}.pdf foi baixado.`, // Nome do arquivo deve bater com o do pdf-generator
+      });
+    } catch (error) {
+      console.error("Erro ao gerar PDF:", error);
+      toast({
+        title: "Erro ao gerar PDF",
+        description: "Ocorreu um erro ao tentar gerar o PDF.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const allRequiredFieldsFilled = useMemo(() => {
     if (!currentSchedule || status !== 'rascunho' || currentMes === null || currentAno === null) {
@@ -146,23 +176,6 @@ export function ScheduleGenerationCard({
     }
   };
 
-  const handleExportPDF = async () => {
-    if (!currentSchedule || currentMes === null || currentAno === null) {
-      toast({ title: "Erro", description: "Nenhum cronograma gerado para exportar.", variant: "destructive" });
-      return;
-    }
-    setIsLoading(true);
-    try {
-      await generateSchedulePdf(currentSchedule, currentMes, currentAno, membros);
-      toast({ title: "Sucesso", description: "PDF gerado com sucesso!", variant: "default" });
-    } catch (e) {
-      console.error("Erro ao gerar PDF:", e);
-      toast({ title: "Erro", description: "Falha ao gerar PDF. Verifique o console.", variant: "destructive" });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const currentYearValue = new Date().getFullYear();
   const yearsForSelect = Array.from({ length: 5 }, (_, i) => currentYearValue - 2 + i);
 
@@ -220,12 +233,19 @@ export function ScheduleGenerationCard({
             </Select>
           </div>
           <Button
-            onClick={handleGenerateSchedule}
-            disabled={isLoading || status === 'rascunho' || status === 'finalizado'}
+            onClick={handleExportPDF}
+            disabled={isLoading || !currentSchedule || currentMes === null || currentAno === null || membros.length === 0}
             className="w-full sm:w-auto"
           >
-            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Gerar Cronograma (Indicadores/Volantes/AV)'}
+            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Gerar PDF'}
           </Button>
+           <Button
+             onClick={handleGenerateSchedule}
+             disabled={isLoading || status === 'rascunho' || status === 'finalizado'}
+             className="w-full sm:w-auto"
+           >
+             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Gerar Cronograma (Indicadores/Volantes/AV)'}
+           </Button>
         </div>
 
         {error && (
@@ -253,7 +273,7 @@ export function ScheduleGenerationCard({
           {isLoading && (
             <div className="text-center py-8">
               <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-2" />
-              <p className="text-muted-foreground">Gerando designações, por favor aguarde...</p>
+              <p className="text-muted-foreground">{isLoading ? "Gerando designações, por favor aguarde..." : "Gerando PDF, por favor aguarde..."}</p>
             </div>
           )}
           {!isLoading && currentSchedule && currentMes !== null && currentAno !== null && (
@@ -277,9 +297,6 @@ export function ScheduleGenerationCard({
                   </Button>
                   <Button onClick={onFinalizeSchedule} disabled={!currentSchedule || isLoading || !allRequiredFieldsFilled}>
                     Finalizar e Salvar Mês
-                  </Button>
-                  <Button onClick={handleExportPDF} disabled={!currentSchedule || isLoading}>
-                    Gerar PDF
                   </Button>
                 </div>
               )}
