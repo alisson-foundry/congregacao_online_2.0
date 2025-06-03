@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { AlertTriangle, Loader2, UserPlus, Info } from 'lucide-react';
 import { getPermissaoRequerida, formatarDataCompleta } from '@/lib/congregacao/utils';
 import { generateMainSchedulePDF } from '@/lib/congregacao/pdf-generator';
+import { ConfirmClearDialog } from './ConfirmClearDialog';
 
 interface AVSelectionContext {
   dateStr: string;
@@ -34,6 +35,7 @@ interface ScheduleGenerationCardProps {
   onOpenSubstitutionModal: (details: SubstitutionDetails) => void;
   onLimpezaChange: (dateKey: string, type: 'aposReuniao' | 'semanal', value: string | null) => void;
   onMonthYearChangeRequest: (mes: number, ano: number) => void;
+  onClearScheduleForMonth: (mes: number, ano: number) => void;
 }
 
 export function ScheduleGenerationCard({
@@ -48,6 +50,7 @@ export function ScheduleGenerationCard({
   onOpenSubstitutionModal,
   onLimpezaChange,
   onMonthYearChangeRequest,
+  onClearScheduleForMonth,
 }: ScheduleGenerationCardProps) {
   const [selectedMes, setSelectedMes] = useState<string>(currentMes !== null ? currentMes.toString() : new Date().getMonth().toString());
   const [selectedAno, setSelectedAno] = useState<string>(currentAno !== null ? currentAno.toString() : new Date().getFullYear().toString());
@@ -179,6 +182,21 @@ export function ScheduleGenerationCard({
   const currentYearValue = new Date().getFullYear();
   const yearsForSelect = Array.from({ length: 5 }, (_, i) => currentYearValue - 2 + i);
 
+  // State for the confirmation dialog
+  const [isConfirmClearDialogOpen, setIsConfirmClearDialogOpen] = useState(false);
+
+  const handleClearMonthClick = () => {
+    if (currentMes !== null && currentAno !== null) {
+       setIsConfirmClearDialogOpen(true);
+    } else {
+       toast({
+        title: "Atenção",
+        description: "Selecione um mês e ano antes de limpar os dados.",
+        variant: "default",
+      });
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -246,6 +264,8 @@ export function ScheduleGenerationCard({
            >
              {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Gerar Cronograma (Indicadores/Volantes/AV)'}
            </Button>
+           {/* New Clear Month Button */}
+           
         </div>
 
         {error && (
@@ -310,6 +330,10 @@ export function ScheduleGenerationCard({
         </div>
       </CardContent>
       {status && <p className="text-sm text-center text-muted-foreground mt-4">Status: {status === 'rascunho' ? 'Rascunho' : 'Finalizado'}</p>}
+
+      {/* Add the ConfirmClearDialog */}
+      {/* Removed from here as functionality moved to Configurations page */}
+      
     </Card>
   );
 }

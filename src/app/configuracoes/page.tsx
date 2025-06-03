@@ -22,6 +22,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { ConfirmClearDialog, type ConfirmClearDialogProps } from '@/components/congregacao/ConfirmClearDialog';
 import type { Membro } from '@/lib/congregacao/types';
+import { Label } from '@/components/ui/label';
+import { NOMES_MESES } from '@/lib/congregacao/constants';
 
 export default function ConfiguracoesPage() {
   const { toast } = useToast();
@@ -33,6 +35,7 @@ export default function ConfiguracoesPage() {
   } = useMemberManagement();
   const scheduleManagement = useScheduleManagement({ membros, updateMemberHistory: () => {} }); // Pass dummy updateMemberHistory
   const { clearPublicAssignments } = usePublicMeetingAssignments();
+  const { scheduleMes, scheduleAno, clearScheduleForMonth } = scheduleManagement;
 
   // State for confirmation dialog
   const [isConfirmClearOpen, setIsConfirmClearOpen] = useState(false);
@@ -47,41 +50,15 @@ export default function ConfiguracoesPage() {
     setIsConfirmClearOpen(true);
   };
 
-  const confirmClearAction = () => {
-    switch (clearType) {
-      case 'history':
-        // Clear history for ALL members on this page
-        const membrosAtualizados = membros.map(m => ({ ...m, historicoDesignacoes: {} }));
-        hookPersistMembros(membrosAtualizados);
-        toast({ title: "Histórico Limpo", description: "Histórico de designações de TODOS os membros foi limpo." });
-        break;
-      case 'main_schedule':
-        scheduleManagement.clearMainScheduleAndCache();
-        toast({ title: "Cronograma Principal Limpo", description: "O cronograma principal e cache associado foram limpos." });
-        break;
-      case 'public_meeting':
-        clearPublicAssignments();
-        toast({ title: "Designações de Reunião Pública Limpas", description: "Todas as designações de reunião pública foram limpas." });
-        break;
-      case 'nvmc':
-        limparStorageNVMCAssignments();
-        toast({ title: "Designações NVMC Limpas", description: "Todas as designações NVMC foram limpas." });
-        break;
-      case 'field_service':
-        limparStorageFieldServiceAssignments();
-        toast({ title: "Designações de Serviço de Campo Limpas", description: "Todas as designações de serviço de campo foram limpas." });
-        break;
-      case 'all':
-        // Clear everything (members, schedules, etc.) - Implement with caution!
-        // This might require clearing multiple storage keys and resetting states
-        // For now, let's focus on the specific clears.
-        toast({ title: "Funcionalidade Não Implementada", description: "A limpeza completa de dados ainda não está disponível.", variant: "destructive" });
-        break;
-      default:
-        break;
-    }
-    setIsConfirmClearOpen(false);
-    setClearType(null);
+  // Function to handle clearing main schedule after month/year selection in modal
+  // This function will be passed to the ConfirmClearDialog
+  const handleConfirmClearMainSchedule = (mes: number, ano: number) => {
+     if (clearScheduleForMonth) {
+        clearScheduleForMonth(mes, ano);
+        toast({ title: "Sucesso", description: `Dados do cronograma principal para ${NOMES_MESES[mes]} de ${ano} limpos.` });
+     } else {
+         toast({ title: "Erro", description: "Função de limpeza não disponível.", variant: "destructive" });
+     }
   };
 
   return (
@@ -90,20 +67,81 @@ export default function ConfiguracoesPage() {
 
       <Card className="mb-6">
         <CardHeader>
-          <CardTitle>Limpeza de Dados</CardTitle>
-          <CardDescription>Gerencie as opções de limpeza e reset de dados da aplicação.</CardDescription>
+          <CardTitle>Gerenciamento de Dados</CardTitle>
+          <CardDescription>Opções para limpar dados específicos ou todos os dados salvos localmente.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <p className="text-destructive text-sm font-semibold">Use com cuidado. Estas ações são irreversíveis.</p>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <Button variant="secondary" onClick={() => handleClearData('history')}>Limpar Histórico de Designações de Todos</Button>
-            <Button variant="secondary" onClick={() => handleClearData('main_schedule')}>Limpar Cronograma Principal</Button>
-            <Button variant="secondary" onClick={() => handleClearData('public_meeting')}>Limpar Dados da Reunião Pública</Button>
-            <Button variant="secondary" onClick={() => handleClearData('nvmc')}>Limpar Dados NVMC</Button>
-            <Button variant="secondary" onClick={() => handleClearData('field_service')}>Limpar Dados do Serviço de Campo</Button>
+          <div>
+            <Label htmlFor="clear-history">Limpar Histórico de Designações de Todos os Membros</Label>
+            <Button 
+              id="clear-history" 
+              variant="destructive" 
+              onClick={() => handleClearData('history')}
+              className="mt-2 w-full"
+            >
+              Limpar Histórico
+            </Button>
           </div>
-          <div className="mt-6 border-t pt-4 border-border">
-            <Button variant="destructive" onClick={() => handleClearData('all')} className="w-full">Limpar TODOS os Dados da Congregação</Button>
+
+          <div>
+            <Label htmlFor="clear-main-schedule">Limpar Designações (Indicadores/Volantes/AV/Limpeza) por Mês</Label>
+             <Button 
+              id="clear-main-schedule" 
+              variant="destructive" 
+              onClick={() => handleClearData('main_schedule')}
+              className="mt-2 w-full"
+            >
+              Limpar Cronograma Principal (Mês Específico)
+            </Button>
+          </div>
+
+          <div>
+            <Label htmlFor="clear-public-meeting-data">Limpar Dados da Reunião Pública</Label>
+            <Button 
+              id="clear-public-meeting-data" 
+              variant="destructive" 
+              onClick={() => handleClearData('public_meeting')}
+              className="mt-2 w-full"
+            >
+              Limpar Reunião Pública
+            </Button>
+          </div>
+          
+          <div>
+            <Label htmlFor="clear-nvmc-data">Limpar Dados da NVMC</Label>
+            <Button 
+              id="clear-nvmc-data" 
+              variant="destructive" 
+              onClick={() => handleClearData('nvmc')}
+              className="mt-2 w-full"
+            >
+              Limpar NVMC
+            </Button>
+          </div>
+          
+          <div>
+            <Label htmlFor="clear-field-service-data">Limpar Dados do Serviço de Campo</Label>
+            <Button 
+              id="clear-field-service-data" 
+              variant="destructive" 
+              onClick={() => handleClearData('field_service')}
+              className="mt-2 w-full"
+            >
+              Limpar Serviço de Campo
+            </Button>
+          </div>
+
+          <div className="border-t pt-4 mt-4">
+            <Label htmlFor="clear-all-data" className="text-lg font-semibold text-destructive">Limpar TODOS os Dados (Reset Completo)</Label>
+            <CardDescription className="text-destructive">ATENÇÃO: Esta ação removerá permanentemente todos os membros, históricos e todos os dados de designação de todas as abas. Não pode ser desfeita.</CardDescription>
+            <Button 
+              id="clear-all-data" 
+              variant="destructive" 
+              onClick={() => handleClearData('all')}
+              className="mt-2 w-full"
+            >
+              Limpar TODOS os Dados
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -111,14 +149,13 @@ export default function ConfiguracoesPage() {
       <ConfirmClearDialog
         isOpen={isConfirmClearOpen}
         onOpenChange={setIsConfirmClearOpen}
-        onClearHistory={confirmClearAction}
-        onClearAllData={confirmClearAction}
-        onClearMainScheduleData={confirmClearAction}
-        onClearPublicMeetingData={confirmClearAction}
-        onClearNvmcData={confirmClearAction}
-        onClearFieldServiceData={confirmClearAction}
+        onClearHistory={() => { /* TODO: Implementar lógica de limpeza de histórico geral aqui, ou manter apenas no member-form */ toast({title: "Funcionalidade", description: "A limpeza de histórico geral ainda não está implementada aqui."}); setIsConfirmClearOpen(false); }}
+        onClearAllData={() => { /* TODO: Implementar lógica de limpeza total aqui */ toast({title: "Funcionalidade", description: "A limpeza total ainda não está implementada aqui."}); setIsConfirmClearOpen(false); }}
+        onClearPublicMeetingData={() => { if(clearPublicAssignments) clearPublicAssignments(); toast({title: "Sucesso", description: "Dados da Reunião Pública limpos."}); setIsConfirmClearOpen(false); }}
+        onClearNvmcData={() => { /* TODO: Implementar limpeza NVMC */ toast({title: "Funcionalidade", description: "A limpeza de dados NVMC ainda não está implementada."}); setIsConfirmClearOpen(false); }}
+        onClearFieldServiceData={() => { /* TODO: Implementar limpeza Serviço de Campo */ toast({title: "Funcionalidade", description: "A limpeza de dados do Serviço de Campo ainda não está implementada."}); setIsConfirmClearOpen(false); }}
+        onClearMainScheduleData={handleConfirmClearMainSchedule}
         clearType={clearType}
-        targetMemberName={targetMemberName}
       />
     </div>
   );
