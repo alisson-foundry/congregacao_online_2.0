@@ -344,8 +344,8 @@ export function ScheduleDisplay({
       const weekEnd = new Date(d);
       weekEnd.setUTCDate(d.getUTCDate() + 6);
 
-      // Só adiciona a semana se ela termina no mês atual
-      if (weekEnd.getUTCMonth() === mes) {
+      // Only add the week if its start date (Monday) is in the current month
+      if (weekStart.getUTCMonth() === mes) {
         weeks.push({
           dateKey: formatarDataCompleta(weekStart),
           weekLabel: `${weekStart.getUTCDate().toString().padStart(2, '0')}/${(weekStart.getUTCMonth() + 1).toString().padStart(2, '0')} - ${weekEnd.getUTCDate().toString().padStart(2, '0')}/${(weekEnd.getUTCMonth() + 1).toString().padStart(2, '0')}`

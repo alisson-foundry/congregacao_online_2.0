@@ -244,7 +244,11 @@ export async function generateMainSchedulePDF(
 
   // Filter dates that are meeting days (Thursday or Sunday) and have content
   const meetingDates = Object.keys(designacoesFeitas)
-    .map(dateStr => new Date(dateStr + "T00:00:00Z"))
+    .map(dateStr => {
+      // Parse YYYY-MM-DD as local date to avoid timezone issues
+      const [year, month, day] = dateStr.split('-').map(Number);
+      return new Date(year, month - 1, day); // Month is 0-indexed
+    })
     .filter(dateObj => dateObj.getUTCDay() === DIAS_REUNIAO.meioSemana || dateObj.getUTCDay() === DIAS_REUNIAO.publica)
     .sort((a, b) => a.getTime() - b.getTime());
 
@@ -406,7 +410,11 @@ export async function generateMainSchedulePDF(
 
   // --- Limpeza Tables ---
   const datesWithLimpezaAposReuniao = Object.keys(designacoesFeitas)
-    .map(dateStr => new Date(dateStr + "T00:00:00Z"))
+    .map(dateStr => {
+      // Parse YYYY-MM-DD as local date to avoid timezone issues
+      const [year, month, day] = dateStr.split('-').map(Number);
+      return new Date(year, month - 1, day); // Month is 0-indexed
+    })
     .filter(dateObj => {
       const dateStr = formatarDataCompleta(dateObj);
       return designacoesFeitas[dateStr]?.limpezaAposReuniaoGrupoId && designacoesFeitas[dateStr].limpezaAposReuniaoGrupoId !== NONE_GROUP_ID;
@@ -466,17 +474,34 @@ export async function generateMainSchedulePDF(
       }
     });
 
-    // Limpeza Semanal
-    const weeksWithLimpezaSemanal = Object.keys(designacoesFeitas)
-      .map(dateStr => new Date(dateStr + "T00:00:00Z"))
-      .filter(dateObj => {
-        const dateStr = formatarDataCompleta(dateObj);
-        return designacoesFeitas[dateStr]?.limpezaSemanalResponsavel && designacoesFeitas[dateStr]?.limpezaSemanalResponsavel.trim() !== '';
-      })
-      .sort((a, b) => a.getTime() - b.getTime());
+    // Limpeza Semanal - Collect unique weeks based on Monday and their assignments
+    const weeklyLimpezaSemanalAssignments: { [mondayDateStr: string]: string } = {};
 
-    if (weeksWithLimpezaSemanal.length > 0) {
-      currentY = tableStartY;
+    Object.keys(designacoesFeitas).forEach(dateStr => {
+      const assignments = designacoesFeitas[dateStr];
+      // Only process dates that actually have a Limpeza Semanal assignment
+      if (assignments?.limpezaSemanalResponsavel && assignments.limpezaSemanalResponsavel.trim() !== '') {
+        // Parse YYYY-MM-DD as local date to avoid timezone issues
+        const [year, month, day] = dateStr.split('-').map(Number);
+        const dateObj = new Date(year, month - 1, day); // Month is 0-indexed
+
+        // Calculate the Monday of the week for this specific assignment date
+        const mondayOfWeek = startOfWeek(dateObj, { weekStartsOn: 1 }); // weekStartsOn: 1 for Monday
+        const mondayDateKey = formatarDataCompleta(mondayOfWeek); // Use YYYY-MM-DD as key
+
+        // Store the responsibility for this week, using the assignment from this date
+        // This ensures we store one responsibility per week, based on the data.
+        weeklyLimpezaSemanalAssignments[mondayDateKey] = assignments.limpezaSemanalResponsavel;
+      }
+    });
+
+    // Sort the unique weeks by date and format the data for the table
+    const sortedMondayDateKeysForLimpezaSemanal = Object.keys(weeklyLimpezaSemanalAssignments).sort();
+
+    if (sortedMondayDateKeysForLimpezaSemanal.length > 0) {
+      // Reset Y position for the second table column (assuming it's next to Limpeza Após Reunião)
+      // This might need adjustment depending on the layout logic outside this block
+      currentY = tableStartY; // Assuming tableStartY is defined earlier for the Limpeza section
 
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(14);
@@ -484,14 +509,13 @@ export async function generateMainSchedulePDF(
       currentY += 14 * 0.7 + 3;
 
       const limpezaSemanalHeaders = [['Semana', 'Responsável']];
-      const limpezaSemanalData = weeksWithLimpezaSemanal.map(date => {
-        const dateStr = formatarDataCompleta(date);
-        const assignments = designacoesFeitas[dateStr];
-        const responsible = assignments?.limpezaSemanalResponsavel || '--';
+      const limpezaSemanalData = sortedMondayDateKeysForLimpezaSemanal.map(mondayDateKey => {
+        // Parse the Monday date key as a local date for formatting
+        const [year, month, day] = mondayDateKey.split('-').map(Number);
+        const mondayDateObj = new Date(year, month - 1, day); // Month is 0-indexed
 
-        // Calculate the Monday of the week and format it as DD/MM using imported startOfWeek
-        const mondayOfWeek = startOfWeek(date, { weekStartsOn: 1 }); // weekStartsOn: 1 for Monday
-        const formattedWeekStart = format(mondayOfWeek, "dd/MM", { locale: ptBR });
+        const formattedWeekStart = format(mondayDateObj, "dd/MM", { locale: ptBR });
+        const responsible = weeklyLimpezaSemanalAssignments[mondayDateKey] || '--';
 
         return [
           formattedWeekStart,
@@ -504,21 +528,22 @@ export async function generateMainSchedulePDF(
         head: limpezaSemanalHeaders,
         body: limpezaSemanalData,
         theme: 'grid',
-        styles: { 
-          font: 'helvetica', 
+        styles: {
+          font: 'helvetica',
           fontSize: 8,
-          cellPadding: 2,
+          cellPadding: 3,
           lineWidth: 0.1,
-          lineColor: [200, 200, 200]
+          lineColor: [200, 200, 200],
+          minCellHeight: 8 * 1.3 // Use consistent min cell height
         },
-        headStyles: { 
-          fillColor: [41, 128, 185], 
+        headStyles: {
+          fillColor: [41, 128, 185],
           textColor: [255, 255, 255],
           fontSize: 8
         },
         margin: { top: 0, left: margin + tableWidth + 15 },
         tableWidth: tableWidth,
-        columnStyles: { 
+        columnStyles: {
           0: { cellWidth: dateColWidth },
           1: { cellWidth: 'auto' }
         }
