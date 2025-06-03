@@ -1,5 +1,7 @@
-import jsPDF from 'jspdf';
+import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import type { Membro, DesignacoesFeitas, PublicMeetingAssignment, NVMCDailyAssignments, NVMCParticipantDynamic, NVCVidaCristaDynamicPart } from './types';
 import { NOMES_MESES, DIAS_REUNIAO, NOMES_DIAS_SEMANA_COMPLETOS, APP_NAME, FUNCOES_DESIGNADAS, GRUPOS_LIMPEZA_APOS_REUNIAO, NOMES_DIAS_SEMANA_ABREV, NONE_GROUP_ID, NVMC_PART_SECTIONS } from './constants';
 import { formatarDataCompleta, formatarDataCompleta as formatarDataParaChaveOriginal } from './utils';
@@ -182,13 +184,13 @@ export function generatePublicMeetingPdf(
   doc.save(`reuniao_publica_${NOMES_MESES[mes].toLowerCase().replace(/ç/g, 'c').replace(/ã/g, 'a')}_${ano}.pdf`);
 }
 
-// Função para Cronograma Principal (Indicadores, Volantes, AV, Limpeza)
-export function generateSchedulePdf(
-  schedule: DesignacoesFeitas,
-  members: Membro[],
-  month: number,
-  year: number
-): void {
+// Função para Cronograma Principal (Indicadores, Volantes, Limpeza)
+export async function generateSchedulePdf(
+  designacoesFeitas: DesignacoesFeitas,
+  mes: number,
+  ano: number,
+  membros: Membro[]
+): Promise<void> {
   const doc = new jsPDF({
     orientation: 'portrait',
     unit: 'pt',
@@ -202,13 +204,13 @@ export function generateSchedulePdf(
   const remainingWidth = contentWidth - dateColWidth;
   const contentColWidth = remainingWidth / 2; // divide igualmente entre as outras duas colunas
 
-  const monthName = NOMES_MESES[month] || 'Mês Desconhecido';
-  const mainTitleText = `Designações - ${monthName} de ${year}`;
+  const monthName = NOMES_MESES[mes] || 'Mês Desconhecido';
+  const mainTitleText = `Designações - ${monthName} de ${ano}`;
 
   // Use a function to get member names safely within the PDF context
   const getMemberNamePdfLocal = (memberId: string | null | undefined): string => {
     if (!memberId || memberId === NONE_GROUP_ID || memberId.trim() === '') return '';
-    const member = members.find(m => m.id === memberId);
+    const member = membros.find(m => m.id === memberId);
     return member ? member.nome : 'Desconhecido';
   };
 
@@ -232,8 +234,9 @@ export function generateSchedulePdf(
   currentY += 16 * 0.7 + 15;
 
   // Filter dates that are meeting days (Thursday or Sunday) and have content
-  const meetingDates = Object.keys(schedule)
-    .map(dateStr => new Date(dateStr + 'T00:00:00Z'))
+  const meetingDates = Object.keys(designacoesFeitas)
+    .map(dateStr => new Date(dateStr + "T00:00:00Z"))
+    .filter(dateObj => dateObj.getUTCDay() === DIAS_REUNIAO.meioSemana || dateObj.getUTCDay() === DIAS_REUNIAO.publica)
     .sort((a, b) => a.getTime() - b.getTime());
 
   // --- Indicadores Table ---
@@ -246,7 +249,7 @@ export function generateSchedulePdf(
     const indicadoresHeaders = [['Data', 'Indicador Externo', 'Indicador Palco']];
     const indicadoresData = meetingDates.map(date => {
       const dateStr = formatarDataCompleta(date);
-      const assignments = schedule[dateStr];
+      const assignments = designacoesFeitas[dateStr];
       const diaSemana = date.getUTCDay();
       const dataDisplay = `${date.getUTCDate()} ${NOMES_DIAS_SEMANA_ABREV[diaSemana]}`;
       return [
@@ -295,7 +298,7 @@ export function generateSchedulePdf(
     const volantesHeaders = [['Data', 'Volante 1', 'Volante 2']];
     const volantesData = meetingDates.map(date => {
       const dateStr = formatarDataCompleta(date);
-      const assignments = schedule[dateStr];
+      const assignments = designacoesFeitas[dateStr];
       const diaSemana = date.getUTCDay();
       const dataDisplay = `${date.getUTCDate()} ${NOMES_DIAS_SEMANA_ABREV[diaSemana]}`;
       return [
@@ -310,55 +313,6 @@ export function generateSchedulePdf(
       startY: currentY,
       head: volantesHeaders,
       body: volantesData,
-      theme: 'grid',
-      styles: { 
-        font: 'helvetica', 
-        fontSize: 8,
-        cellPadding: 2,
-        lineWidth: 0.1,
-        lineColor: [200, 200, 200]
-      },
-      headStyles: { 
-        fillColor: [52, 73, 94], 
-        textColor: [255, 255, 255],
-        fontSize: 8
-      },
-      margin: { top: 0, left: margin, right: margin },
-      columnStyles: { 
-        0: { cellWidth: dateColWidth },
-        1: { cellWidth: contentColWidth },
-        2: { cellWidth: contentColWidth }
-      },
-    });
-
-    currentY = (doc as any).lastAutoTable.finalY + 25;
-  }
-
-  // --- Áudio/Vídeo (AV) Table ---
-  if (meetingDates.length > 0) {
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(11);
-    doc.text('Áudio/Vídeo (AV)', margin, currentY);
-    currentY += 11 * 0.7 + 3;
-
-    const avHeaders = [['Data', 'Vídeo', 'Indicador Zoom']];
-    const avData = meetingDates.map(date => {
-      const dateStr = formatarDataCompleta(date);
-      const assignments = schedule[dateStr];
-      const diaSemana = date.getUTCDay();
-      const dataDisplay = `${date.getUTCDate()} ${NOMES_DIAS_SEMANA_ABREV[diaSemana]}`;
-      return [
-        dataDisplay,
-        getMemberNamePdfLocal(assignments?.videoAudioId),
-        getMemberNamePdfLocal(assignments?.indicadorZoomId),
-      ];
-    });
-
-    // Tabela de AV
-    doc.autoTable({
-      startY: currentY,
-      head: avHeaders,
-      body: avData,
       theme: 'grid',
       styles: { 
         font: 'helvetica', 
@@ -410,7 +364,7 @@ export function generateSchedulePdf(
   const limpezaPosReuniaoData = limpezaPosReuniaoDates.length > 0
     ? limpezaPosReuniaoDates.map(date => {
         const dateStr = formatarDataCompleta(date);
-        const assignments = schedule[dateStr];
+        const assignments = designacoesFeitas[dateStr];
         const diaSemana = date.getUTCDay();
         const dataDisplay = `${date.getUTCDate()} ${NOMES_DIAS_SEMANA_ABREV[diaSemana]}`;
         
@@ -459,10 +413,10 @@ export function generateSchedulePdf(
   const limpezaSemanalData = limpezaSemanalDates.length > 0
     ? limpezaSemanalDates.map(date => {
         const dateStr = formatarDataCompleta(date);
-        const assignments = schedule[dateStr];
+        const assignments = designacoesFeitas[dateStr];
         
         let weeklyResponsible = assignments?.limpezaSemanalResponsavel || '--';
-        const weekDisplay = `${date.getUTCDate()}/${(month + 1).toString().padStart(2, '0')}`;
+        const weekDisplay = `${date.getUTCDate()}/${(mes + 1).toString().padStart(2, '0')}`;
 
         return [weekDisplay, weeklyResponsible];
       })
@@ -503,7 +457,7 @@ export function generateSchedulePdf(
     currentY // Use currentY aqui também para garantir que a posição seja atualizada
   ) + 20;
 
-  doc.save(`designacoes_${monthName.toLowerCase().replace(/ç/g, 'c').replace(/ã/g, 'a')}_${year}.pdf`);
+  doc.save(`designacoes_${monthName.toLowerCase().replace(/ç/g, 'c').replace(/ã/g, 'a')}_${ano}.pdf`);
 }
 
 // Constantes para o PDF do NVMC
@@ -776,6 +730,167 @@ export function generateNvmcPdf(
   });
 
   doc.save(`programacao_reuniao_${monthName.toLowerCase()}_${year}.pdf`);
+}
+
+export async function generateMainSchedulePDF(
+  assignmentsForMonth: DesignacoesFeitas,
+  mes: number,
+  ano: number
+): Promise<void> {
+  const doc = new jsPDF();
+  const margin = 20;
+  let currentY = margin;
+  const lineHeight = 7;
+  const contentWidth = doc.internal.pageSize.getWidth() - (2 * margin);
+
+  // Título
+  doc.setFontSize(16);
+  doc.text(`Cronograma de Designações - ${NOMES_MESES[mes]} ${ano}`, margin, currentY);
+  currentY += lineHeight * 2;
+
+  // Filter dates that are meeting days (Thursday or Sunday) and have content
+  const meetingDates = Object.keys(assignmentsForMonth)
+    .map(dateStr => new Date(dateStr + "T00:00:00Z"))
+    .filter(date => {
+      const dayOfWeek = date.getUTCDay();
+      return (dayOfWeek === DIAS_REUNIAO.meioSemana || dayOfWeek === DIAS_REUNIAO.publica) &&
+             assignmentsForMonth[formatarDataCompleta(date)];
+    })
+    .sort((a, b) => a.getTime() - b.getTime());
+
+  // --- Indicadores Table ---
+  doc.setFontSize(14);
+  currentY += lineHeight;
+  doc.text('Indicadores', margin, currentY);
+  currentY += lineHeight;
+
+  const indicadoresHeaders = [['Data', 'Indicador Externo', 'Indicador Palco']];
+  const indicadoresData = meetingDates.map(date => {
+    const dateStr = formatarDataCompleta(date);
+    const assignments = assignmentsForMonth[dateStr];
+    const isMeioSemana = date.getUTCDay() === DIAS_REUNIAO.meioSemana;
+    
+    const indicadorExternoId = isMeioSemana ? 'indicadorExternoQui' : 'indicadorExternoDom';
+    const indicadorPalcoId = isMeioSemana ? 'indicadorPalcoQui' : 'indicadorPalcoDom';
+    
+    return [
+      format(date, "dd/MM/yyyy", { locale: ptBR }),
+      assignments[indicadorExternoId] || '--',
+      assignments[indicadorPalcoId] || '--'
+    ];
+  });
+
+  doc.autoTable({
+    startY: currentY,
+    head: indicadoresHeaders,
+    body: indicadoresData,
+    theme: 'grid',
+    headStyles: { fillColor: [41, 128, 185], textColor: 255 },
+    margin: { left: margin }
+  });
+
+  currentY = (doc as any).lastAutoTable.finalY + lineHeight;
+
+  // --- Volantes Table ---
+  doc.setFontSize(14);
+  doc.text('Volantes', margin, currentY);
+  currentY += lineHeight;
+
+  const volantesHeaders = [['Data', 'Volante 1', 'Volante 2']];
+  const volantesData = meetingDates.map(date => {
+    const dateStr = formatarDataCompleta(date);
+    const assignments = assignmentsForMonth[dateStr];
+    const isMeioSemana = date.getUTCDay() === DIAS_REUNIAO.meioSemana;
+    
+    const volante1Id = isMeioSemana ? 'volante1Qui' : 'volante1Dom';
+    const volante2Id = isMeioSemana ? 'volante2Qui' : 'volante2Dom';
+    
+    return [
+      format(date, "dd/MM/yyyy", { locale: ptBR }),
+      assignments[volante1Id] || '--',
+      assignments[volante2Id] || '--'
+    ];
+  });
+
+  doc.autoTable({
+    startY: currentY,
+    head: volantesHeaders,
+    body: volantesData,
+    theme: 'grid',
+    headStyles: { fillColor: [41, 128, 185], textColor: 255 },
+    margin: { left: margin }
+  });
+
+  currentY = (doc as any).lastAutoTable.finalY + lineHeight;
+
+  // --- Leitura/Presidência Table ---
+  doc.setFontSize(14);
+  doc.text('Leitura/Presidência', margin, currentY);
+  currentY += lineHeight;
+
+  const leituraHeaders = [['Data', 'Leitor A Sentinela']];
+  const leituraData = meetingDates.map(date => {
+    const dateStr = formatarDataCompleta(date);
+    const assignments = assignmentsForMonth[dateStr];
+    const isMeioSemana = date.getUTCDay() === DIAS_REUNIAO.meioSemana;
+    
+    const leitorId = isMeioSemana ? 'leitorQui' : 'leitorDom';
+    
+    return [
+      format(date, "dd/MM/yyyy", { locale: ptBR }),
+      assignments[leitorId] || '--'
+    ];
+  });
+
+  doc.autoTable({
+    startY: currentY,
+    head: leituraHeaders,
+    body: leituraData,
+    theme: 'grid',
+    headStyles: { fillColor: [41, 128, 185], textColor: 255 },
+    margin: { left: margin }
+  });
+
+  currentY = (doc as any).lastAutoTable.finalY + lineHeight;
+
+  // --- Limpeza Table ---
+  doc.setFontSize(14);
+  doc.text('Limpeza', margin, currentY);
+  currentY += lineHeight;
+
+  const limpezaHeaders = [['Data', 'Grupo de Limpeza', 'Responsável Semanal']];
+  const limpezaData = meetingDates.map(date => {
+    const dateStr = formatarDataCompleta(date);
+    const assignments = assignmentsForMonth[dateStr];
+    let grupoLimpeza = assignments?.limpezaAposReuniaoGrupoId || '--';
+    let weeklyResponsible = assignments?.limpezaSemanalResponsavel || '--';
+
+    // Se for um ID de grupo, buscar o nome do grupo
+    if (grupoLimpeza !== '--') {
+      const grupo = GRUPOS_LIMPEZA_APOS_REUNIAO.find(g => g.id === grupoLimpeza);
+      if (grupo) {
+        grupoLimpeza = grupo.nome;
+      }
+    }
+
+    return [
+      format(date, "dd/MM/yyyy", { locale: ptBR }),
+      grupoLimpeza,
+      weeklyResponsible
+    ];
+  });
+
+  doc.autoTable({
+    startY: currentY,
+    head: limpezaHeaders,
+    body: limpezaData,
+    theme: 'grid',
+    headStyles: { fillColor: [41, 128, 185], textColor: 255 },
+    margin: { left: margin }
+  });
+
+  const monthName = NOMES_MESES[mes].toLowerCase().replace(/ç/g, 'c').replace(/ã/g, 'a');
+  doc.save(`designacoes_${monthName}_${ano}.pdf`);
 }
 
     

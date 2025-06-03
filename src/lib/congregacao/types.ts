@@ -8,8 +8,8 @@ export interface FuncaoDesignada {
   id: string;
   nome: string;
   tipoReuniao: ('meioSemana' | 'publica')[];
-  tabela: 'Indicadores' | 'Volantes' | 'LeitorPresidente' | 'AV'; // Helps group functions in schedule display
-  permissaoRequeridaBase?: string; // e.g., 'indicador', 'volante', 'leitor', 'presidente' - base permission part
+  tabela: 'Indicadores' | 'Volantes' | 'AV' | 'LeitorPresidente'; // Helps group functions in schedule display
+  permissaoRequeridaBase: string;
 }
 
 export interface Impedimento {
@@ -59,11 +59,12 @@ export interface DiasReuniao {
 }
 
 export interface SubstitutionDetails {
-  date: string; // YYYY-MM-DD
+  date: string;
   functionId: string;
-  originalMemberId: string;
-  originalMemberName: string | null;
-  currentFunctionGroupId: 'Indicadores' | 'Volantes' | 'AV' | string; // Para saber qual funcao especifica dentro do grupo
+  originalMemberId: string | null;
+  originalMemberName: string;
+  currentFunctionGroupId: 'Indicadores' | 'Volantes' | 'AV' | 'LeitorPresidente' | string; // Agora inclui AV
+  tableTitle: 'Indicadores' | 'Volantes' | 'AV' | string; // Agora inclui AV
 }
 
 // Tipos para a aba "Reunião Pública"

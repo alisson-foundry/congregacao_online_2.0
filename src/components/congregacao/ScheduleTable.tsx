@@ -17,9 +17,7 @@ interface ScheduleTableProps {
   allMembers: Membro[];
   onCellClick?: (date: string, columnKey: string, originalMemberId: string | null, originalMemberName: string | null, tableTitle: string, finalized: boolean) => void;
   currentFullDateStrings: string[];
-  isAVTable?: boolean;
   isReadOnly: boolean;
-  onInputChange?: (date: string, columnKey: string, value: string) => void;
 }
 
 export function ScheduleTable({
@@ -29,9 +27,7 @@ export function ScheduleTable({
   allMembers,
   onCellClick,
   currentFullDateStrings,
-  isAVTable = false,
-  isReadOnly, // Adicionado aqui
-  onInputChange,
+  isReadOnly,
 }: ScheduleTableProps) {
   
   const getMemberName = (memberId: string | null): string | null => {
@@ -40,9 +36,9 @@ export function ScheduleTable({
     return member ? member.nome : 'Desconhecido';
   };
 
-  const noDataForTable = !data || data.length === 0 || data.every(row => columns.every(col => col.key === 'data' || !row[col.key]));
+  const noDataForTable = !data || data.length === 0;
 
-  if (noDataForTable && !isAVTable) { // Para AV, sempre mostramos a estrutura
+  if (noDataForTable) {
     return (
       <Card className="flex-1 min-w-[300px]">
         <CardHeader>
@@ -54,7 +50,6 @@ export function ScheduleTable({
       </Card>
     );
   }
-
 
   return (
     <Card className="flex-1 min-w-[300px]">
@@ -69,7 +64,6 @@ export function ScheduleTable({
                 {columns.map((col) => (
                   <TableHead 
                     key={col.key}
-                    className={isAVTable && col.key !== 'data' ? 'min-w-[100px]' : ''}
                   >
                     {col.label}
                   </TableHead>
@@ -86,7 +80,7 @@ export function ScheduleTable({
 
                     if (col.key === 'data') {
                       return (
-                        <TableCell key={col.key} className={isAVTable && col.key === 'data' ? 'min-w-[100px]' : ''}>
+                        <TableCell key={col.key}>
                           <div className="flex items-center space-x-2">
                              <span>{row.data.split(' ')[0]}</span>
                              <Badge variant="outline" className={row.diaSemanaBadgeColor}>{row.data.split(' ')[1]}</Badge>
@@ -95,11 +89,9 @@ export function ScheduleTable({
                       );
                     }
 
-                    // Células de designação
                     return (
                       <TableCell 
-                        key={col.key} 
-                        className={isAVTable ? 'min-w-[100px]' : ''}
+                        key={col.key}
                       >
                         {onCellClick && !isReadOnly ? (
                           <Button
@@ -111,7 +103,7 @@ export function ScheduleTable({
                               }
                             }}
                           >
-                            {memberName || (isAVTable ? <><UserPlus className="mr-1.5 h-3.5 w-3.5"/> Selecionar</> : '--')}
+                            {memberName || '--'}
                           </Button>
                         ) : (
                           memberName || '--'

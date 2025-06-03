@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import type { Membro, DesignacoesFeitas, Designacao, SubstitutionDetails } from '@/lib/congregacao/types';
 import { FUNCOES_DESIGNADAS, NOMES_MESES, NOMES_DIAS_SEMANA_ABREV, DIAS_REUNIAO, DIAS_SEMANA_REUNIAO_CORES, GRUPOS_LIMPEZA_APOS_REUNIAO, NONE_GROUP_ID } from '@/lib/congregacao/constants';
 import { ScheduleTable } from './ScheduleTable';
@@ -94,16 +94,16 @@ export function prepararDadosTabela(
 
   } else if (tipoTabela === 'Volantes') {
     columns = [
-        { key: 'data', label: 'Data' },
-        { key: 'volante1', label: 'Volante 1' },
-        { key: 'volante2', label: 'Volante 2' },
+      { key: 'data', label: 'Data' },
+      { key: 'volante1', label: 'Volante 1' },
+      { key: 'volante2', label: 'Volante 2' },
     ];
     const MAPPED_COL_KEYS_VOLANTES = {
-        volante1: (diaSemanaIndex: number) => diaSemanaIndex === DIAS_REUNIAO.meioSemana ? 'volante1Qui' : 'volante1Dom',
-        volante2: (diaSemanaIndex: number) => diaSemanaIndex === DIAS_REUNIAO.meioSemana ? 'volante2Qui' : 'volante2Dom',
-    }
+      volante1: (diaSemanaIndex: number) => diaSemanaIndex === DIAS_REUNIAO.meioSemana ? 'volante1Qui' : 'volante1Dom',
+      volante2: (diaSemanaIndex: number) => diaSemanaIndex === DIAS_REUNIAO.meioSemana ? 'volante2Qui' : 'volante2Dom',
+    };
     const dataTabelaVolantes: Designacao[] = [];
-     sortedDates.forEach(dataStr => {
+    sortedDates.forEach(dataStr => {
       const dataObj = new Date(dataStr + 'T00:00:00');
       const dia = dataObj.getUTCDate();
       const diaSemanaIndex = dataObj.getUTCDay();
@@ -113,95 +113,57 @@ export function prepararDadosTabela(
       else if (diaSemanaIndex === DIAS_REUNIAO.publica) badgeColorClass = DIAS_SEMANA_REUNIAO_CORES.publica;
 
       const designacoesDoDia = designacoesFeitas[dataStr] || {};
-      const row: Designacao = { data: `${dia} ${diaAbrev}`, diaSemanaBadgeColor: badgeColorClass };
-
-      if (diaSemanaIndex === DIAS_REUNIAO.meioSemana) {
-        row['volante1Qui'] = designacoesDoDia['volante1Qui'];
-        row['volante2Qui'] = designacoesDoDia['volante2Qui'];
-      } else if (diaSemanaIndex === DIAS_REUNIAO.publica) {
-        row['volante1Dom'] = designacoesDoDia['volante1Dom'];
-        row['volante2Dom'] = designacoesDoDia['volante2Dom'];
-      }
+      const row: Designacao = { 
+        data: `${dia} ${diaAbrev}`, 
+        diaSemanaBadgeColor: badgeColorClass,
+        volante1: designacoesDoDia[MAPPED_COL_KEYS_VOLANTES.volante1(diaSemanaIndex)] ?? null,
+        volante2: designacoesDoDia[MAPPED_COL_KEYS_VOLANTES.volante2(diaSemanaIndex)] ?? null
+      };
       dataTabelaVolantes.push(row);
     });
-
-     const remappedDataVolantes = dataTabelaVolantes.map((row, index) => {
-        const dataObj = new Date(sortedDates[index] + 'T00:00:00');
-        const diaSemanaIndex = dataObj.getUTCDay();
-        return {
-            ...row,
-            volante1: row[MAPPED_COL_KEYS_VOLANTES.volante1(diaSemanaIndex)] ?? null,
-            volante2: row[MAPPED_COL_KEYS_VOLANTES.volante2(diaSemanaIndex)] ?? null,
-        }
-      });
-    return { data: remappedDataVolantes, columns, fullDateStrings };
+    return { data: dataTabelaVolantes, columns, fullDateStrings };
   } else if (tipoTabela === 'AV') {
     columns = [
-        { key: 'data', label: 'Data' },
-        { key: 'video', label: 'Vídeo' },
-        { key: 'indicadorZoom', label: 'Indicador Zoom' },
+      { key: 'data', label: 'Data' },
+      { key: 'av', label: 'AV' },
+      { key: 'indicadorZoom', label: 'Indicador Zoom' },
     ];
     const MAPPED_COL_KEYS_AV = {
-        video: (diaSemanaIndex: number) => diaSemanaIndex === DIAS_REUNIAO.meioSemana ? 'avVideoQui' : 'avVideoDom',
-        indicadorZoom: (diaSemanaIndex: number) => diaSemanaIndex === DIAS_REUNIAO.meioSemana ? 'avIndicadorZoomQui' : 'avIndicadorZoomDom',
+      av: (diaSemanaIndex: number) => diaSemanaIndex === DIAS_REUNIAO.meioSemana ? 'avQui' : 'avDom',
+      indicadorZoom: (diaSemanaIndex: number) => diaSemanaIndex === DIAS_REUNIAO.meioSemana ? 'indicadorZoomQui' : 'indicadorZoomDom',
     };
     const dataTabelaAV: Designacao[] = [];
     sortedDates.forEach(dataStr => {
-        const dataObj = new Date(dataStr + 'T00:00:00');
-        const dia = dataObj.getUTCDate();
-        const diaSemanaIndex = dataObj.getUTCDay();
-        const diaAbrev = NOMES_DIAS_SEMANA_ABREV[diaSemanaIndex];
-        let badgeColorClass = DIAS_SEMANA_REUNIAO_CORES.outroDia;
-        if (diaSemanaIndex === DIAS_REUNIAO.meioSemana) badgeColorClass = DIAS_SEMANA_REUNIAO_CORES.meioSemana;
-        else if (diaSemanaIndex === DIAS_REUNIAO.publica) badgeColorClass = DIAS_SEMANA_REUNIAO_CORES.publica;
+      const dataObj = new Date(dataStr + 'T00:00:00');
+      const dia = dataObj.getUTCDate();
+      const diaSemanaIndex = dataObj.getUTCDay();
+      const diaAbrev = NOMES_DIAS_SEMANA_ABREV[diaSemanaIndex];
+      let badgeColorClass = DIAS_SEMANA_REUNIAO_CORES.outroDia;
+      if (diaSemanaIndex === DIAS_REUNIAO.meioSemana) badgeColorClass = DIAS_SEMANA_REUNIAO_CORES.meioSemana;
+      else if (diaSemanaIndex === DIAS_REUNIAO.publica) badgeColorClass = DIAS_SEMANA_REUNIAO_CORES.publica;
 
-        const designacoesDoDia = designacoesFeitas[dataStr] || {};
-        console.log('prepararDadosTabela - AV: Processing date', dataStr, 'designacoesDoDia:', designacoesDoDia);
-
-        // Get the correct keys based on the day
-        const videoKey = diaSemanaIndex === DIAS_REUNIAO.meioSemana ? 'avVideoQui' : 'avVideoDom';
-        const indicadorZoomKey = diaSemanaIndex === DIAS_REUNIAO.meioSemana ? 'avIndicadorZoomQui' : 'avIndicadorZoomDom';
-
-        // Log the actual values being used
-        console.log('prepararDadosTabela - AV: Using keys for', dataStr, {
-            videoKey,
-            indicadorZoomKey,
-            videoValue: designacoesDoDia[videoKey],
-            indicadorZoomValue: designacoesDoDia[indicadorZoomKey],
-        });
-
-        const row: Designacao = {
-            data: `${dia} ${diaAbrev}`,
-            diaSemanaBadgeColor: badgeColorClass,
-            video: designacoesDoDia[videoKey] ?? null,
-            indicadorZoom: designacoesDoDia[indicadorZoomKey] ?? null,
-        };
-
-        console.log('prepararDadosTabela - AV: Created row', dataStr, ':', row);
-        dataTabelaAV.push(row);
+      const designacoesDoDia = designacoesFeitas[dataStr] || {};
+      const row: Designacao = {
+        data: `${dia} ${diaAbrev}`,
+        diaSemanaBadgeColor: badgeColorClass,
+        av: designacoesDoDia[MAPPED_COL_KEYS_AV.av(diaSemanaIndex)] ?? null,
+        indicadorZoom: designacoesDoDia[MAPPED_COL_KEYS_AV.indicadorZoom(diaSemanaIndex)] ?? null
+      };
+      dataTabelaAV.push(row);
     });
-
-    // Log the final AV data before returning
-    console.log('prepararDadosTabela - AV: Final data:', dataTabelaAV);
-
     return { data: dataTabelaAV, columns, fullDateStrings };
-  } else {
-    columns = [];
   }
-
-  return { data: dataTabela, columns, fullDateStrings };
+  return { data: [], columns: [], fullDateStrings: [] };
 }
 
-
 interface ScheduleDisplayProps {
-    designacoesFeitas: DesignacoesFeitas;
-    membros: Membro[];
-    mes: number;
-    ano: number;
-    onOpenSubstitutionModal: (details: SubstitutionDetails) => void;
-    onCleaningChange: (dateKey: string, type: 'aposReuniao' | 'semanal', value: string | null) => void;
-    onAVInputChange: (dateKey: string, columnKey: string, value: string) => void;
-    status: string | null;
+  status: string | null;
+  designacoesFeitas: DesignacoesFeitas;
+  membros: Membro[];
+  mes: number;
+  ano: number;
+  onOpenSubstitutionModal: (details: SubstitutionDetails) => void;
+  onCleaningChange: (dateKey: string, type: 'aposReuniao' | 'semanal', value: string | null) => void;
 }
 
 // Helper function to get ISO week number
@@ -215,34 +177,88 @@ function getISOWeek(date: Date) {
 
 
 export function ScheduleDisplay({
-    designacoesFeitas,
-    membros,
-    mes,
-    ano,
-    onOpenSubstitutionModal,
-    onCleaningChange,
-    onAVInputChange,
-    status,
+  status,
+  designacoesFeitas,
+  membros,
+  mes,
+  ano,
+  onOpenSubstitutionModal,
+  onCleaningChange,
 }: ScheduleDisplayProps) {
   const { toast } = useToast();
 
-  // Log to check if designacoesFeitas updates
-  console.log('ScheduleDisplay - designacoesFeitas updated:', designacoesFeitas);
+  const prepararDadosTabela = (tipoTabela: 'Indicadores' | 'Volantes' | 'AV') => {
+    const datasDeReuniao: Date[] = [];
+    const primeiroDiaDoMes = new Date(Date.UTC(ano, mes, 1));
+    const ultimoDiaDoMes = new Date(Date.UTC(ano, mes + 1, 0));
 
-  if (!designacoesFeitas || Object.keys(designacoesFeitas).length === 0) {
-    return null;
-  }
+    for (let d = new Date(primeiroDiaDoMes); d <= ultimoDiaDoMes; d.setUTCDate(d.getUTCDate() + 1)) {
+      const diaSemana = d.getUTCDay();
+      if (diaSemana === DIAS_REUNIAO.meioSemana || diaSemana === DIAS_REUNIAO.publica) {
+        datasDeReuniao.push(new Date(d));
+      }
+    }
 
+    const fullDateStrings = datasDeReuniao.map(d => formatarDataCompleta(d));
+    const data = datasDeReuniao.map(d => {
+      const dateStr = formatarDataCompleta(d);
+      const diaSemanaIndex = d.getUTCDay();
+      const diaAbrev = NOMES_DIAS_SEMANA_ABREV[diaSemanaIndex];
+      const badgeColorClass = diaSemanaIndex === DIAS_REUNIAO.meioSemana ? DIAS_SEMANA_REUNIAO_CORES.meioSemana : DIAS_SEMANA_REUNIAO_CORES.publica;
+      const tipoReuniao = diaSemanaIndex === DIAS_REUNIAO.meioSemana ? 'meioSemana' : 'publica';
 
-  const dadosIndicadores = prepararDadosTabela(designacoesFeitas, mes, ano, 'Indicadores');
-  const dadosVolantes = prepararDadosTabela(designacoesFeitas, mes, ano, 'Volantes');
-  const dadosAV = prepararDadosTabela(designacoesFeitas, mes, ano, 'AV');
+      const row: any = {
+        data: `${d.getUTCDate().toString().padStart(2, '0')} ${diaAbrev}`,
+        diaSemanaBadgeColor: badgeColorClass,
+      };
+
+      const designacoesDoDia = designacoesFeitas[dateStr] || {};
+
+      if (tipoTabela === 'Indicadores') {
+        row.indicadorExterno = diaSemanaIndex === DIAS_REUNIAO.meioSemana 
+          ? designacoesDoDia['indicadorExternoQui'] 
+          : designacoesDoDia['indicadorExternoDom'];
+        row.indicadorPalco = diaSemanaIndex === DIAS_REUNIAO.meioSemana 
+          ? designacoesDoDia['indicadorPalcoQui'] 
+          : designacoesDoDia['indicadorPalcoDom'];
+      } else if (tipoTabela === 'Volantes') {
+        row.volante1 = diaSemanaIndex === DIAS_REUNIAO.meioSemana 
+          ? designacoesDoDia['volante1Qui'] 
+          : designacoesDoDia['volante1Dom'];
+        row.volante2 = diaSemanaIndex === DIAS_REUNIAO.meioSemana 
+          ? designacoesDoDia['volante2Qui'] 
+          : designacoesDoDia['volante2Dom'];
+      } else if (tipoTabela === 'AV') {
+        row.av = diaSemanaIndex === DIAS_REUNIAO.meioSemana 
+          ? designacoesDoDia['avQui'] 
+          : designacoesDoDia['avDom'];
+        row.indicadorZoom = diaSemanaIndex === DIAS_REUNIAO.meioSemana 
+          ? designacoesDoDia['indicadorZoomQui'] 
+          : designacoesDoDia['indicadorZoomDom'];
+      }
+
+      return row;
+    });
+
+    return { data, fullDateStrings };
+  };
+
+  const dadosIndicadores = prepararDadosTabela('Indicadores');
+  const dadosVolantes = prepararDadosTabela('Volantes');
+  const dadosAV = prepararDadosTabela('AV');
+
+  const hasAnyMeetingDates = dadosIndicadores.fullDateStrings.length > 0 || dadosVolantes.fullDateStrings.length > 0 || dadosAV.fullDateStrings.length > 0;
+  const hasAnyDataForMonth = Object.values(designacoesFeitas).some(dayAssignments =>
+    Object.keys(dayAssignments).length > 0 && Object.values(dayAssignments).some(val => val !== null && val !== '' && val !== NONE_GROUP_ID)
+  );
+
+  const hasLimpezaData = Object.values(designacoesFeitas).some(d => d.limpezaAposReuniaoGrupoId || d.limpezaSemanalResponsavel);
 
   const handleCellClick = (
     date: string,
     columnKey: string,
     memberIdOrNewMemberId: string | null,
-    memberNameOrNewMemberName: string | null,
+    memberName: string | null,
     tableTitle: string,
     finalized: boolean
   ) => {
@@ -250,181 +266,196 @@ export function ScheduleDisplay({
       return; // Do nothing if the schedule is finalized
     }
 
-    const realFunctionId = getRealFunctionId(columnKey, date, tableTitle);
+    const dataObj = new Date(date + 'T00:00:00');
+    const diaSemanaIndex = dataObj.getUTCDay();
+    const isMeioSemana = diaSemanaIndex === DIAS_REUNIAO.meioSemana;
 
-    if (memberIdOrNewMemberId) {
-      const details: SubstitutionDetails = {
-        date: date,
-        functionId: realFunctionId,
-        originalMemberId: memberIdOrNewMemberId,
-        originalMemberName: memberNameOrNewMemberName || 'Membro',
-        currentFunctionGroupId: tableTitle,
-      };
-      onOpenSubstitutionModal(details);
-    } else {
-      toast({
-        title: "Atenção",
-        description: "Selecione um membro primeiro.",
-        variant: "default"
-      });
-    }
-  };
-
-  const hasIndicadoresData = dadosIndicadores.data.length > 0 && dadosIndicadores.data.some(row => Object.keys(row).some(key => key !== 'data' && key !== 'diaSemanaBadgeColor' && row[key]));
-  const hasVolantesData = dadosVolantes.data.length > 0 && dadosVolantes.data.some(row => Object.keys(row).some(key => key !== 'data' && key !== 'diaSemanaBadgeColor' && row[key]));
-
-  const hasAnyMeetingDates = dadosIndicadores.fullDateStrings.length > 0 || dadosVolantes.fullDateStrings.length > 0 || dadosAV.fullDateStrings.length > 0;
-  const hasAVDataStructure = hasAnyMeetingDates;
-
-  const hasAnyDataForMonth = Object.values(designacoesFeitas).some(dayAssignments =>
-    Object.keys(dayAssignments).length > 0 && Object.values(dayAssignments).some(val => val !== null && val !== '' && val !== NONE_GROUP_ID)
-  );
-
-  const hasLimpezaData = Object.values(designacoesFeitas).some(d => d.limpezaAposReuniaoGrupoId || d.limpezaSemanalResponsavel);
-
-  if (!hasAnyDataForMonth && !hasAVDataStructure && !hasLimpezaData) {
-     return <p className="text-muted-foreground text-center py-4">Nenhuma designação para {NOMES_MESES[mes]} de {ano}. Gere o cronograma ou adicione manualmente.</p>;
-  }
-
-  const getMeetingDatesForCleaning = (currentMes: number, currentAno: number): Date[] => {
-    const dates: Date[] = [];
-    const firstDay = new Date(Date.UTC(currentAno, currentMes, 1));
-    const lastDayOfMonth = new Date(Date.UTC(currentAno, currentMes + 1, 0)).getUTCDate();
-    for (let day = 1; day <= lastDayOfMonth; day++) {
-        const currentDate = new Date(Date.UTC(currentAno, currentMes, day));
-        const dayOfWeek = currentDate.getUTCDay();
-        if (dayOfWeek === DIAS_REUNIAO.meioSemana || dayOfWeek === DIAS_REUNIAO.publica) {
-            dates.push(currentDate);
-        }
-    }
-    return dates.sort((a,b) => a.getTime() - b.getTime());
-  };
-
-  const meetingDatesForCleaning = getMeetingDatesForCleaning(mes, ano);
-
-  const weeksForCleaning = React.useMemo(() => {
-    if (!meetingDatesForCleaning || meetingDatesForCleaning.length === 0) return [];
-    const weeks: { weekLabel: string, dateKey: string }[] = [];
-    const processedWeeks = new Set<string>();
-
-    meetingDatesForCleaning.forEach(date => {
-      const sunday = new Date(date);
-      sunday.setUTCDate(date.getUTCDate() - date.getUTCDay());
-
-      const year = sunday.getUTCFullYear();
-      const month = sunday.getUTCMonth();
-      const day = sunday.getUTCDate();
-
-      const dateKey = formatarDataCompleta(sunday);
-      const weekIdForSet = `${year}-${getISOWeek(sunday)}`;
-
-      if (!processedWeeks.has(weekIdForSet)) {
-        const monthAbbrev = NOMES_MESES[month]?.substring(0, 3).toLowerCase() || '';
-        const weekLabel = `Semana ${day.toString().padStart(2, '0')}-${monthAbbrev}.`;
-        weeks.push({ weekLabel, dateKey });
-        processedWeeks.add(weekIdForSet);
+    let functionId: string;
+    if (tableTitle === 'Indicadores') {
+      if (columnKey === 'indicadorExterno') {
+        functionId = isMeioSemana ? 'indicadorExternoQui' : 'indicadorExternoDom';
+      } else if (columnKey === 'indicadorPalco') {
+        functionId = isMeioSemana ? 'indicadorPalcoQui' : 'indicadorPalcoDom';
+      } else {
+        return;
       }
-    });
-    return weeks.sort((a,b) => a.dateKey.localeCompare(b.dateKey));
-  }, [mes, ano, meetingDatesForCleaning]);
+    } else if (tableTitle === 'Volantes') {
+      if (columnKey === 'volante1') {
+        functionId = isMeioSemana ? 'volante1Qui' : 'volante1Dom';
+      } else if (columnKey === 'volante2') {
+        functionId = isMeioSemana ? 'volante2Qui' : 'volante2Dom';
+      } else {
+        return;
+      }
+    } else if (tableTitle === 'AV') {
+      if (columnKey === 'av') {
+        functionId = isMeioSemana ? 'avQui' : 'avDom';
+      } else if (columnKey === 'indicadorZoom') {
+        functionId = isMeioSemana ? 'indicadorZoomQui' : 'indicadorZoomDom';
+      } else {
+        return;
+      }
+    } else {
+      return;
+    }
 
+    const details: SubstitutionDetails = {
+      date: date,
+      functionId: functionId,
+      originalMemberId: memberIdOrNewMemberId,
+      originalMemberName: memberName || 'Membro',
+      tableTitle: tableTitle,
+      currentFunctionGroupId: tableTitle as any,
+    };
+    onOpenSubstitutionModal(details);
+  };
+
+  const meetingDatesForCleaning = useMemo(() => {
+    const dates: Date[] = [];
+    const primeiroDiaDoMes = new Date(Date.UTC(ano, mes, 1));
+    const ultimoDiaDoMes = new Date(Date.UTC(ano, mes + 1, 0));
+
+    for (let d = new Date(primeiroDiaDoMes); d <= ultimoDiaDoMes; d.setUTCDate(d.getUTCDate() + 1)) {
+      const diaSemana = d.getUTCDay();
+      if (diaSemana === DIAS_REUNIAO.meioSemana || diaSemana === DIAS_REUNIAO.publica) {
+        dates.push(new Date(d));
+      }
+    }
+    return dates;
+  }, [mes, ano]);
+
+  const weeksForCleaning = useMemo(() => {
+    const weeks: { dateKey: string; weekLabel: string }[] = [];
+    const primeiroDiaDoMes = new Date(Date.UTC(ano, mes, 1));
+    const ultimoDiaDoMes = new Date(Date.UTC(ano, mes + 1, 0));
+
+    for (let d = new Date(primeiroDiaDoMes); d <= ultimoDiaDoMes; d.setUTCDate(d.getUTCDate() + 1)) {
+      if (d.getUTCDay() === 0) { // Domingo
+        const weekStart = new Date(d);
+        const weekEnd = new Date(d);
+        weekEnd.setUTCDate(d.getUTCDate() + 6);
+        weeks.push({
+          dateKey: formatarDataCompleta(weekStart),
+          weekLabel: `${weekStart.getUTCDate().toString().padStart(2, '0')} - ${weekEnd.getUTCDate().toString().padStart(2, '0')}`
+        });
+      }
+    }
+    return weeks;
+  }, [mes, ano]);
+
+  if (!hasAnyMeetingDates) {
+    return <p className="text-muted-foreground text-center py-4">Nenhuma data de reunião para {NOMES_MESES[mes]} de {ano}.</p>;
+  }
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-6">
+      {hasAnyMeetingDates && (
+        <>
           <ScheduleTable
             title="Indicadores"
             data={dadosIndicadores.data}
-            columns={dadosIndicadores.columns}
+            columns={[
+              { key: 'data', label: 'Data' },
+              { key: 'indicadorExterno', label: 'Indicador Externo' },
+              { key: 'indicadorPalco', label: 'Indicador Palco' },
+            ]}
             allMembers={membros}
-            onCellClick={(date, columnKey, memberIdOrNewMemberId, memberNameOrNewMemberName) => handleCellClick(date, columnKey, memberIdOrNewMemberId, memberNameOrNewMemberName, 'Indicadores', false)}
+            onCellClick={handleCellClick}
             currentFullDateStrings={dadosIndicadores.fullDateStrings}
- isReadOnly={status === 'finalizado'}
+            isReadOnly={status === 'finalizado'}
           />
+
           <ScheduleTable
             title="Volantes"
             data={dadosVolantes.data}
-            columns={dadosVolantes.columns}
+            columns={[
+              { key: 'data', label: 'Data' },
+              { key: 'volante1', label: 'Volante 1' },
+              { key: 'volante2', label: 'Volante 2' },
+            ]}
             allMembers={membros}
-            onCellClick={(date, columnKey, memberIdOrNewMemberId, memberNameOrNewMemberName) => handleCellClick(date, columnKey, memberIdOrNewMemberId, memberNameOrNewMemberName, 'Volantes', false)}
+            onCellClick={handleCellClick}
             currentFullDateStrings={dadosVolantes.fullDateStrings}
- isReadOnly={status === 'finalizado'}
+            isReadOnly={status === 'finalizado'}
           />
+
           <ScheduleTable
-            title="Áudio/Vídeo (AV)"
+            title="AV"
             data={dadosAV.data}
-            columns={dadosAV.columns}
+            columns={[
+              { key: 'data', label: 'Data' },
+              { key: 'av', label: 'AV' },
+              { key: 'indicadorZoom', label: 'Indicador Zoom' },
+            ]}
             allMembers={membros}
+            onCellClick={handleCellClick}
             currentFullDateStrings={dadosAV.fullDateStrings}
-            onInputChange={onAVInputChange}
-            isAVTable={true}
- isReadOnly={status === 'finalizado'}
+            isReadOnly={status === 'finalizado'}
           />
-      </div>
+        </>
+      )}
 
-      {/* Seção de Limpeza */}
-      {(meetingDatesForCleaning.length > 0 || weeksForCleaning.length > 0) && (
+      {hasLimpezaData && (
         <Card>
-          <CardHeader><CardTitle className="text-lg">Limpeza</CardTitle></CardHeader>
-          <CardContent className="flex flex-col md:flex-row gap-x-6 gap-y-4">
-            {/* Coluna Limpeza Após Reunião */}
-            <div className="flex-1 space-y-3 min-w-[280px]">
-              <h4 className="font-medium text-md text-foreground">Limpeza Após a Reunião</h4>
-              <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
-                {meetingDatesForCleaning.map(dateObj => {
-                  const dateStr = formatarDataCompleta(dateObj);
-                  const dia = dateObj.getUTCDate();
-                  const diaSemanaIndex = dateObj.getUTCDay();
-                  const diaAbrev = NOMES_DIAS_SEMANA_ABREV[diaSemanaIndex];
-                  const badgeColorClass = diaSemanaIndex === DIAS_REUNIAO.meioSemana ? DIAS_SEMANA_REUNIAO_CORES.meioSemana : DIAS_SEMANA_REUNIAO_CORES.publica;
-                  const currentGroupId = designacoesFeitas[dateStr]?.limpezaAposReuniaoGrupoId;
+          <CardContent className="pt-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="flex-1 space-y-3 min-w-[280px]">
+                <h4 className="font-medium text-md text-foreground">Limpeza Após a Reunião</h4>
+                <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
+                  {meetingDatesForCleaning.map(dateObj => {
+                    const dateStr = formatarDataCompleta(dateObj);
+                    const dia = dateObj.getUTCDate();
+                    const diaSemanaIndex = dateObj.getUTCDay();
+                    const diaAbrev = NOMES_DIAS_SEMANA_ABREV[diaSemanaIndex];
+                    const badgeColorClass = diaSemanaIndex === DIAS_REUNIAO.meioSemana ? DIAS_SEMANA_REUNIAO_CORES.meioSemana : DIAS_SEMANA_REUNIAO_CORES.publica;
+                    const currentGroupId = designacoesFeitas[dateStr]?.limpezaAposReuniaoGrupoId;
 
-                  return (
-                    <div key={dateStr} className="flex items-center gap-3">
-                      <div className="flex items-center space-x-2 w-24">
-                         <span>{dia.toString().padStart(2,'0')}</span>
-                         <Badge variant="outline" className={badgeColorClass}>{diaAbrev}</Badge>
+                    return (
+                      <div key={dateStr} className="flex items-center gap-3">
+                        <div className="flex items-center space-x-2 w-24">
+                           <span>{dia.toString().padStart(2,'0')}</span>
+                           <Badge variant="outline" className={badgeColorClass}>{diaAbrev}</Badge>
+                        </div>
+                        <Select
+                          value={currentGroupId ?? NONE_GROUP_ID}
+                          onValueChange={(value) => onCleaningChange(dateStr, 'aposReuniao', value === NONE_GROUP_ID ? null : value)}
+                          disabled={status === 'finalizado'}
+                        >
+                          <SelectTrigger className="flex-1 h-9 text-sm">
+                            <SelectValue placeholder="Selecione o grupo" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {GRUPOS_LIMPEZA_APOS_REUNIAO.map(grupo => (
+                              <SelectItem key={grupo.id} value={grupo.id}>{grupo.nome}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
-                      <Select
-                        value={currentGroupId ?? NONE_GROUP_ID}
-                        onValueChange={(value) => onCleaningChange(dateStr, 'aposReuniao', value === NONE_GROUP_ID ? null : value)}
- disabled={status === 'finalizado'}
-                      >
-                        <SelectTrigger className="flex-1 h-9 text-sm">
-                          <SelectValue placeholder="Selecione o grupo" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {GRUPOS_LIMPEZA_APOS_REUNIAO.map(grupo => (
-                            <SelectItem key={grupo.id} value={grupo.id}>{grupo.nome}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
-            </div>
 
-            {/* Coluna Limpeza Semanal */}
-            <div className="flex-1 space-y-3 min-w-[280px]">
-              <h4 className="font-medium text-md text-foreground">Limpeza Semanal</h4>
-              <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
-                {weeksForCleaning.map(week => {
-                  const currentResponsavel = designacoesFeitas[week.dateKey]?.limpezaSemanalResponsavel || '';
-                  return (
-                    <div key={week.dateKey} className="flex items-center gap-3">
-                      <Label htmlFor={`limpeza-semanal-${week.dateKey}`} className="w-32 text-sm">{week.weekLabel}</Label>
-                      <Input
-                        id={`limpeza-semanal-${week.dateKey}`}
-                        value={currentResponsavel}
-                        onChange={(e) => onCleaningChange(week.dateKey, 'semanal', e.target.value)}
-                        placeholder="Responsáveis"
- disabled={status === 'finalizado'}
-                        className="flex-1 h-9 text-sm"
-                      />
-                    </div>
-                  );
-                })}
+              <div className="flex-1 space-y-3 min-w-[280px]">
+                <h4 className="font-medium text-md text-foreground">Limpeza Semanal</h4>
+                <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
+                  {weeksForCleaning.map(week => {
+                    const currentResponsavel = designacoesFeitas[week.dateKey]?.limpezaSemanalResponsavel || '';
+                    return (
+                      <div key={week.dateKey} className="flex items-center gap-3">
+                        <Label htmlFor={`limpeza-semanal-${week.dateKey}`} className="w-32 text-sm">{week.weekLabel}</Label>
+                        <Input
+                          id={`limpeza-semanal-${week.dateKey}`}
+                          value={currentResponsavel}
+                          onChange={(e) => onCleaningChange(week.dateKey, 'semanal', e.target.value)}
+                          placeholder="Responsáveis"
+                          disabled={status === 'finalizado'}
+                          className="flex-1 h-9 text-sm"
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             </div>
           </CardContent>

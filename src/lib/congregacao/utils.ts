@@ -99,23 +99,21 @@ export function getPermissaoRequerida(funcaoId: string, tipoReuniao: 'meioSemana
 }
 
 
-export function getRealFunctionId(columnKey: string, dateStr: string, tipoTabela: string): string {
-    const dataObj = new Date(dateStr + "T00:00:00Z"); // Use UTC for this date object to be consistent
-    const diaSemanaIndex = dataObj.getUTCDay();
-    const isMeioSemana = diaSemanaIndex === DIAS_REUNIAO.meioSemana;
+export function getRealFunctionId(columnKey: string, date: string, tipoTabela: string): string {
+  const dateObj = new Date(date + "T00:00:00Z");
+  const isMeioSemana = dateObj.getUTCDay() === DIAS_REUNIAO.meioSemana;
 
-    if (tipoTabela === 'Indicadores') {
-        if (columnKey === 'indicadorExterno') return isMeioSemana ? 'indicadorExternoQui' : 'indicadorExternoDom';
-        if (columnKey === 'indicadorPalco') return isMeioSemana ? 'indicadorPalcoQui' : 'indicadorPalcoDom';
-    } else if (tipoTabela === 'Volantes') {
-        if (columnKey === 'volante1') return isMeioSemana ? 'volante1Qui' : 'volante1Dom';
-        if (columnKey === 'volante2') return isMeioSemana ? 'volante2Qui' : 'volante2Dom';
-    } else if (tipoTabela === 'Áudio/Vídeo (AV)') { 
-        if (columnKey === 'video') return isMeioSemana ? 'avVideoQui' : 'avVideoDom';
-        if (columnKey === 'indicadorZoom') return isMeioSemana ? 'avIndicadorZoomQui' : 'avIndicadorZoomDom';
-    }
-    // If columnKey is already specific (e.g., 'indicadorExternoDom' or 'leitorDom'), or not matched above, return it.
-    return columnKey; 
+  if (tipoTabela === 'Indicadores') {
+    if (columnKey === 'indicadorExterno') return isMeioSemana ? 'indicadorExternoQui' : 'indicadorExternoDom';
+    if (columnKey === 'indicadorPalco') return isMeioSemana ? 'indicadorPalcoQui' : 'indicadorPalcoDom';
+  } else if (tipoTabela === 'Volantes') {
+    if (columnKey === 'volante1') return isMeioSemana ? 'volante1Qui' : 'volante1Dom';
+    if (columnKey === 'volante2') return isMeioSemana ? 'volante2Qui' : 'volante2Dom';
+  } else if (tipoTabela === 'LeitorPresidente') {
+    if (columnKey === 'leitor') return isMeioSemana ? 'leitorQui' : 'leitorDom';
+  }
+
+  return columnKey;
 }
 
 export function parseNvmcProgramText(text: string): ParsedNvmcProgram {

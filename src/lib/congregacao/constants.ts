@@ -23,9 +23,11 @@ export const PERMISSOES_BASE: PermissaoBase[] = [
   { id: 'indicadorDom', nome: 'Indicador Domingo', grupo: 'Indicadores' },
   { id: 'volanteQui', nome: 'Volante Quinta', grupo: 'Volantes' },
   { id: 'volanteDom', nome: 'Volante Domingo', grupo: 'Volantes' },
-  { id: 'leitorQui', nome: 'Leitor (Meio Semana)', grupo: 'Leitura/Presidência' },
-  { id: 'leitorDom', nome: 'Leitor (Fim Semana)', grupo: 'Leitura/Presidência' },
-  { id: 'presidente', nome: 'Presidente/Instrutor', grupo: 'Leitura/Presidência' },  { id: 'av', nome: 'Áudio/Vídeo', grupo: 'Áudio/Vídeo' },
+  { id: 'leitorQui', nome: 'Leitor Quinta', grupo: 'Leitura/Presidência' },
+  { id: 'leitorDom', nome: 'Leitor Domingo', grupo: 'Leitura/Presidência' },
+  { id: 'presidente', nome: 'Presidente', grupo: 'Leitura/Presidência' },
+  { id: 'avQui', nome: 'Áudio/Vídeo Quinta', grupo: 'Áudio/Vídeo' },
+  { id: 'avDom', nome: 'Áudio/Vídeo Domingo', grupo: 'Áudio/Vídeo' },
 ];
 
 export const FUNCOES_DESIGNADAS: FuncaoDesignada[] = [
@@ -40,12 +42,13 @@ export const FUNCOES_DESIGNADAS: FuncaoDesignada[] = [
   { id: 'volante1Dom', nome: 'Volante 1', tipoReuniao: ['publica'], tabela: 'Volantes', permissaoRequeridaBase: 'volanteDom' },
   { id: 'volante2Dom', nome: 'Volante 2', tipoReuniao: ['publica'], tabela: 'Volantes', permissaoRequeridaBase: 'volanteDom' },
   // Leitura/Presidência
+  { id: 'leitorQui', nome: 'Leitor A Sentinela (Qui)', tipoReuniao: ['meioSemana'], tabela: 'LeitorPresidente', permissaoRequeridaBase: 'leitorQui' },
   { id: 'leitorDom', nome: 'Leitor A Sentinela (Dom)', tipoReuniao: ['publica'], tabela: 'LeitorPresidente', permissaoRequeridaBase: 'leitorDom' },
   // Áudio/Vídeo
-  { id: 'avVideoQui', nome: 'Vídeo (Qui)', tipoReuniao: ['meioSemana'], tabela: 'AV', permissaoRequeridaBase: 'av' },
-  { id: 'avIndicadorZoomQui', nome: 'Indicador Zoom (Qui)', tipoReuniao: ['meioSemana'], tabela: 'AV', permissaoRequeridaBase: 'av' },
-  { id: 'avVideoDom', nome: 'Vídeo (Dom)', tipoReuniao: ['publica'], tabela: 'AV', permissaoRequeridaBase: 'av' },
-  { id: 'avIndicadorZoomDom', nome: 'Indicador Zoom (Dom)', tipoReuniao: ['publica'], tabela: 'AV', permissaoRequeridaBase: 'av' },
+  { id: 'avQui', nome: 'Áudio/Vídeo', tipoReuniao: ['meioSemana'], tabela: 'AV', permissaoRequeridaBase: 'avQui' },
+  { id: 'indicadorZoomQui', nome: 'Indicador Zoom', tipoReuniao: ['meioSemana'], tabela: 'AV', permissaoRequeridaBase: 'avQui' },
+  { id: 'avDom', nome: 'Áudio/Vídeo', tipoReuniao: ['publica'], tabela: 'AV', permissaoRequeridaBase: 'avDom' },
+  { id: 'indicadorZoomDom', nome: 'Indicador Zoom', tipoReuniao: ['publica'], tabela: 'AV', permissaoRequeridaBase: 'avDom' },
 ];
 
 export const TIPOS_DESIGNACAO: Record<string, string> = FUNCOES_DESIGNADAS.reduce((acc: Record<string, string>, funcao) => {

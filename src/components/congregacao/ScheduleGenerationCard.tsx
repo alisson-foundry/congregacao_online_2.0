@@ -32,7 +32,6 @@ interface ScheduleGenerationCardProps {
   onFinalizeSchedule: () => Promise<{ success: boolean; error?: string }>;
   onSaveProgress: () => void;
   onOpenSubstitutionModal: (details: SubstitutionDetails) => void;
-  onDirectAssignAV: (date: string, functionId: string, newMemberId: string | null, originalMemberId: string | null) => void;
   onLimpezaChange: (dateKey: string, type: 'aposReuniao' | 'semanal', value: string | null) => void;
   onMonthYearChangeRequest: (mes: number, ano: number) => void;
 }
@@ -47,7 +46,6 @@ export function ScheduleGenerationCard({
   onFinalizeSchedule,
   onSaveProgress,
   onOpenSubstitutionModal,
-  onDirectAssignAV,
   onLimpezaChange,
   onMonthYearChangeRequest,
 }: ScheduleGenerationCardProps) {
@@ -56,10 +54,6 @@ export function ScheduleGenerationCard({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
-
-  const [isAVMemberSelectionOpen, setIsAVMemberSelectionOpen] = useState(false);
-  const [avSelectionContext, setAVSelectionContext] = useState<AVSelectionContext | null>(null);
-
 
   useEffect(() => {
     if (currentMes !== null && currentAno !== null) {
@@ -131,63 +125,25 @@ export function ScheduleGenerationCard({
     return true;
   }, [currentSchedule, status, currentMes, currentAno]);
 
-
   const handleGenerateSchedule = async () => {
-    setError(null);
     setIsLoading(true);
-    const mes = parseInt(selectedMes, 10);
-    const ano = parseInt(selectedAno, 10);
-
-    if (membros.length === 0) {
-      const errMsg = "Não é possível gerar designações pois não há membros cadastrados.";
-      setError(errMsg);
-      setIsLoading(false);
-      toast({ title: "Erro", description: "Adicione membros primeiro.", variant: "destructive" });
-      return;
-    }
-
+    setError(null);
     try {
-        const result = await onScheduleGenerated(mes, ano);
-
-        if (result.error) {
-            setError(result.error);
-        }
-    } catch (e: any) {
-        console.error("Falha crítica ao gerar cronograma:", e);
-        setError("Ocorreu uma falha inesperada ao gerar o cronograma. Verifique o console para mais detalhes.");
-        toast({ title: "Erro Inesperado", description: "Falha ao gerar cronograma.", variant: "destructive"});
+      console.log('[DIAGNÓSTICO] Chamando onScheduleGenerated para mês:', selectedMes, 'ano:', selectedAno);
+      const result = await onScheduleGenerated(parseInt(selectedMes, 10), parseInt(selectedAno, 10));
+      console.log('[DIAGNÓSTICO] Resultado de onScheduleGenerated:', result);
+      if (result.success) {
+        console.log('[DIAGNÓSTICO] Estado atualizado com schedule:', result.generatedSchedule);
+      } else {
+        setError(result.error || 'Erro ao gerar designações.');
+        console.log('[DIAGNÓSTICO] Erro ao gerar designações:', result.error);
+      }
+    } catch (err) {
+      setError('Erro inesperado ao gerar designações.');
+      console.error('[DIAGNÓSTICO] Exceção ao gerar designações:', err);
     } finally {
-        setIsLoading(false);
+      setIsLoading(false);
     }
-  };
-
-  const handleOpenAVMemberSelection = (
-    dateStr: string,
-    functionId: string,
-    columnKey: string,
-    currentMemberId: string | null
-  ) => {
-    const targetDate = new Date(dateStr + "T00:00:00");
-    const tipoReuniao = targetDate.getUTCDay() === DIAS_REUNIAO.meioSemana ? 'meioSemana' : 'publica';
-    const funcDef = FUNCOES_DESIGNADAS.find(f => f.id === functionId);
-    const requiredPermissionId: string | null | undefined = funcDef?.permissaoRequeridaBase
-        ? getPermissaoRequerida(funcDef.id, tipoReuniao)
-        : null;
-
-    setAVSelectionContext({ dateStr, functionId, columnKey, currentMemberId, requiredPermissionId });
-    setIsAVMemberSelectionOpen(true);
-  };
-
-  const handleConfirmAVSelection = (newMemberId: string | null) => {
-    if (!avSelectionContext || currentMes === null || currentAno === null) return;
-
-    const { dateStr, functionId } = avSelectionContext;
-    const originalMemberId = avSelectionContext.currentMemberId || null;
-
-    onDirectAssignAV(dateStr, functionId, newMemberId, originalMemberId);
-
-    setIsAVMemberSelectionOpen(false);
-    setAVSelectionContext(null);
   };
 
   const handleExportPDF = async () => {
@@ -197,7 +153,7 @@ export function ScheduleGenerationCard({
     }
     setIsLoading(true);
     try {
-      await generateSchedulePdf(currentSchedule, membros, currentMes, currentAno);
+      await generateSchedulePdf(currentSchedule, currentMes, currentAno, membros);
       toast({ title: "Sucesso", description: "PDF gerado com sucesso!", variant: "default" });
     } catch (e) {
       console.error("Erro ao gerar PDF:", e);
@@ -207,11 +163,6 @@ export function ScheduleGenerationCard({
     }
   };
 
-  // Handler to update AV fields in the schedule state
-  const handleAVInputChange = (dateKey: string, columnKey: string, value: string) => {
-    onDirectAssignAV(dateKey, columnKey, value, null);
-  };
-
   const currentYearValue = new Date().getFullYear();
   const yearsForSelect = Array.from({ length: 5 }, (_, i) => currentYearValue - 2 + i);
 
@@ -219,7 +170,7 @@ export function ScheduleGenerationCard({
     <Card>
       <CardHeader>
         <CardDescription>
-          Selecione o mês e ano para gerar o cronograma de designações. As designações de AV e Limpeza são manuais/editáveis.
+          Selecione o mês e ano para gerar o cronograma de designações. As designações de Limpeza são manuais/editáveis.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -273,7 +224,7 @@ export function ScheduleGenerationCard({
             disabled={isLoading || status === 'rascunho' || status === 'finalizado'}
             className="w-full sm:w-auto"
           >
-            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Gerar Cronograma (Indicadores/Volantes)'}
+            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Gerar Cronograma (Indicadores/Volantes/AV)'}
           </Button>
         </div>
 
@@ -318,7 +269,6 @@ export function ScheduleGenerationCard({
                 ano={currentAno}
                 onOpenSubstitutionModal={onOpenSubstitutionModal}
                 onCleaningChange={onLimpezaChange}
-                onAVInputChange={handleAVInputChange}
               />
                {status === 'rascunho' && (
                  <div className="mt-6 flex flex-col sm:flex-row gap-4 justify-center">
@@ -342,21 +292,7 @@ export function ScheduleGenerationCard({
           )}
         </div>
       </CardContent>
-      {isAVMemberSelectionOpen && avSelectionContext && (
-        <MemberSelectionDialog
-          isOpen={isAVMemberSelectionOpen}
-          onOpenChange={setIsAVMemberSelectionOpen}
-          allMembers={membros}
-          targetRole={null}
-          requiredPermissionId={avSelectionContext.requiredPermissionId}
-          currentDate={avSelectionContext.dateStr}
-          onSelectMember={(memberId) => handleConfirmAVSelection(memberId)}
-          currentlyAssignedMemberId={avSelectionContext.currentMemberId}
-          dialogTitle={`Selecionar para ${FUNCOES_DESIGNADAS.find(f=>f.id === avSelectionContext.functionId)?.nome || 'Função AV'}`}
-          dialogDescription={`Escolha um membro para ${FUNCOES_DESIGNADAS.find(f=>f.id === avSelectionContext.functionId)?.nome || 'esta função de AV'} em ${new Date(avSelectionContext.dateStr + "T00:00:00").toLocaleDateString('pt-BR', { day: '2-digit', month: 'long' })}.`}
-        />
-      )}
-     {status && <p className="text-sm text-center text-muted-foreground mt-4">Status: {status === 'rascunho' ? 'Rascunho' : 'Finalizado'}</p>}
+      {status && <p className="text-sm text-center text-muted-foreground mt-4">Status: {status === 'rascunho' ? 'Rascunho' : 'Finalizado'}</p>}
     </Card>
   );
 }

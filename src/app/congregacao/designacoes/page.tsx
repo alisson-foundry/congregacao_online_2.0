@@ -130,34 +130,6 @@ export default function DesignacoesPage() {
     setSubstitutionDetails(null);
   };
 
-  const handleDirectAssignAV = (
-    date: string,
-    functionId: string,
-    newMemberId: string | null,
-    originalMemberId: string | null
-  ) => {
-    console.log('handleDirectAssignAV - Calling confirmManualAssignmentOrSubstitution with:', { date, functionId, newMemberId, originalMemberId, scheduleData: scheduleManagement.scheduleData, mes: scheduleManagement.scheduleMes, ano: scheduleManagement.scheduleAno });
-    if (!scheduleManagement.scheduleData || scheduleManagement.scheduleMes === null || scheduleManagement.scheduleAno === null) {
-      toast({ title: "Erro", description: "Não foi possível processar a designação AV. Dados do cronograma ausentes.", variant: "destructive" });
-      return;
-    }
-  
-    scheduleManagement.confirmManualAssignmentOrSubstitution(
-      date,
-      functionId,
-      newMemberId,
-      originalMemberId,
-      scheduleManagement.scheduleData,
-      scheduleManagement.scheduleMes,
-      scheduleManagement.scheduleAno
-    );
-  
-    toast({ 
-      title: "Designação AV Atualizada", 
-      description: "A designação de Áudio/Vídeo foi atualizada com sucesso." 
-    });
-  };
-
   const handleSaveProgressClick = () => {
     salvarDesignacoes();
     toast({ title: "Progresso Salvo", description: "Cronograma atual salvo no cache do navegador." });
@@ -177,10 +149,10 @@ export default function DesignacoesPage() {
     <div className="container mx-auto py-8 bg-[#F0F2F5]">
       <h1 className="text-3xl font-bold mb-6">Gerar Designações</h1>
       
-      <Tabs defaultValue="indicadores-volantes-av-limpeza" className="w-full">
+      <Tabs defaultValue="indicadores-volantes-limpeza" className="w-full">
         <TabsList className="mb-4 bg-transparent">
-          <TabsTrigger value="indicadores-volantes-av-limpeza" className="flex items-center">
-            <ListChecks className="mr-2 h-4 w-4" /> Indicadores/Volantes/AV/Limpeza
+          <TabsTrigger value="indicadores-volantes-limpeza" className="flex items-center">
+            <ListChecks className="mr-2 h-4 w-4" /> Indicadores/Volantes/Limpeza
           </TabsTrigger>
           <TabsTrigger value="reuniao-publica" className="flex items-center">
             <BookOpen className="mr-2 h-4 w-4" /> Reunião Pública
@@ -193,7 +165,7 @@ export default function DesignacoesPage() {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="indicadores-volantes-av-limpeza">
+        <TabsContent value="indicadores-volantes-limpeza">
           <ScheduleGenerationCard
             membros={membros}
             onScheduleGenerated={handleScheduleGeneratedCallback}
@@ -201,7 +173,6 @@ export default function DesignacoesPage() {
             currentMes={scheduleManagement.scheduleMes}
             currentAno={scheduleManagement.scheduleAno}
             onOpenSubstitutionModal={handleOpenSubstitutionModal}
-            onDirectAssignAV={handleDirectAssignAV}
             onLimpezaChange={scheduleManagement.updateLimpezaAssignment}
             status={status} 
             onSaveProgress={handleSaveProgressClick} 
