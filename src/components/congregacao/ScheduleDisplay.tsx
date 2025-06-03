@@ -252,8 +252,6 @@ export function ScheduleDisplay({
     Object.keys(dayAssignments).length > 0 && Object.values(dayAssignments).some(val => val !== null && val !== '' && val !== NONE_GROUP_ID)
   );
 
-  const hasLimpezaData = Object.values(designacoesFeitas).some(d => d.limpezaAposReuniaoGrupoId || d.limpezaSemanalResponsavel);
-
   const handleCellClick = (
     date: string,
     columnKey: string,
@@ -329,14 +327,28 @@ export function ScheduleDisplay({
     const primeiroDiaDoMes = new Date(Date.UTC(ano, mes, 1));
     const ultimoDiaDoMes = new Date(Date.UTC(ano, mes + 1, 0));
 
-    for (let d = new Date(primeiroDiaDoMes); d <= ultimoDiaDoMes; d.setUTCDate(d.getUTCDate() + 1)) {
-      if (d.getUTCDay() === 0) { // Domingo
-        const weekStart = new Date(d);
-        const weekEnd = new Date(d);
-        weekEnd.setUTCDate(d.getUTCDate() + 6);
+    // Encontra a primeira segunda-feira do mês
+    let primeiraSegunda = new Date(primeiroDiaDoMes);
+    while (primeiraSegunda.getUTCDay() !== 1) { // 1 = Segunda-feira
+      primeiraSegunda.setUTCDate(primeiraSegunda.getUTCDate() + 1);
+    }
+
+    // Se a primeira segunda-feira for depois do dia 7, vamos para a segunda-feira anterior
+    if (primeiraSegunda.getUTCDate() > 7) {
+      primeiraSegunda.setUTCDate(primeiraSegunda.getUTCDate() - 7);
+    }
+
+    // Gera as semanas a partir da primeira segunda-feira
+    for (let d = new Date(primeiraSegunda); d <= ultimoDiaDoMes; d.setUTCDate(d.getUTCDate() + 7)) {
+      const weekStart = new Date(d);
+      const weekEnd = new Date(d);
+      weekEnd.setUTCDate(d.getUTCDate() + 6);
+
+      // Só adiciona a semana se ela termina no mês atual
+      if (weekEnd.getUTCMonth() === mes) {
         weeks.push({
           dateKey: formatarDataCompleta(weekStart),
-          weekLabel: `${weekStart.getUTCDate().toString().padStart(2, '0')} - ${weekEnd.getUTCDate().toString().padStart(2, '0')}`
+          weekLabel: `${weekStart.getUTCDate().toString().padStart(2, '0')}/${(weekStart.getUTCMonth() + 1).toString().padStart(2, '0')} - ${weekEnd.getUTCDate().toString().padStart(2, '0')}/${(weekEnd.getUTCMonth() + 1).toString().padStart(2, '0')}`
         });
       }
     }
@@ -395,72 +407,70 @@ export function ScheduleDisplay({
         </>
       )}
 
-      {hasLimpezaData && (
-        <Card>
-          <CardContent className="pt-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="flex-1 space-y-3 min-w-[280px]">
-                <h4 className="font-medium text-md text-foreground">Limpeza Após a Reunião</h4>
-                <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
-                  {meetingDatesForCleaning.map(dateObj => {
-                    const dateStr = formatarDataCompleta(dateObj);
-                    const dia = dateObj.getUTCDate();
-                    const diaSemanaIndex = dateObj.getUTCDay();
-                    const diaAbrev = NOMES_DIAS_SEMANA_ABREV[diaSemanaIndex];
-                    const badgeColorClass = diaSemanaIndex === DIAS_REUNIAO.meioSemana ? DIAS_SEMANA_REUNIAO_CORES.meioSemana : DIAS_SEMANA_REUNIAO_CORES.publica;
-                    const currentGroupId = designacoesFeitas[dateStr]?.limpezaAposReuniaoGrupoId;
+      <Card>
+        <CardContent className="pt-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="flex-1 space-y-3 min-w-[280px]">
+              <h4 className="font-medium text-md text-foreground">Limpeza Após a Reunião</h4>
+              <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
+                {meetingDatesForCleaning.map(dateObj => {
+                  const dateStr = formatarDataCompleta(dateObj);
+                  const dia = dateObj.getUTCDate();
+                  const diaSemanaIndex = dateObj.getUTCDay();
+                  const diaAbrev = NOMES_DIAS_SEMANA_ABREV[diaSemanaIndex];
+                  const badgeColorClass = diaSemanaIndex === DIAS_REUNIAO.meioSemana ? DIAS_SEMANA_REUNIAO_CORES.meioSemana : DIAS_SEMANA_REUNIAO_CORES.publica;
+                  const currentGroupId = designacoesFeitas[dateStr]?.limpezaAposReuniaoGrupoId;
 
-                    return (
-                      <div key={dateStr} className="flex items-center gap-3">
-                        <div className="flex items-center space-x-2 w-24">
-                           <span>{dia.toString().padStart(2,'0')}</span>
-                           <Badge variant="outline" className={badgeColorClass}>{diaAbrev}</Badge>
-                        </div>
-                        <Select
-                          value={currentGroupId ?? NONE_GROUP_ID}
-                          onValueChange={(value) => onCleaningChange(dateStr, 'aposReuniao', value === NONE_GROUP_ID ? null : value)}
-                          disabled={status === 'finalizado'}
-                        >
-                          <SelectTrigger className="flex-1 h-9 text-sm">
-                            <SelectValue placeholder="Selecione o grupo" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {GRUPOS_LIMPEZA_APOS_REUNIAO.map(grupo => (
-                              <SelectItem key={grupo.id} value={grupo.id}>{grupo.nome}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                  return (
+                    <div key={dateStr} className="flex items-center gap-3">
+                      <div className="flex items-center space-x-2 w-24">
+                         <span>{dia.toString().padStart(2,'0')}</span>
+                         <Badge variant="outline" className={badgeColorClass}>{diaAbrev}</Badge>
                       </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <div className="flex-1 space-y-3 min-w-[280px]">
-                <h4 className="font-medium text-md text-foreground">Limpeza Semanal</h4>
-                <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
-                  {weeksForCleaning.map(week => {
-                    const currentResponsavel = designacoesFeitas[week.dateKey]?.limpezaSemanalResponsavel || '';
-                    return (
-                      <div key={week.dateKey} className="flex items-center gap-3">
-                        <Label htmlFor={`limpeza-semanal-${week.dateKey}`} className="w-32 text-sm">{week.weekLabel}</Label>
-                        <Input
-                          id={`limpeza-semanal-${week.dateKey}`}
-                          value={currentResponsavel}
-                          onChange={(e) => onCleaningChange(week.dateKey, 'semanal', e.target.value)}
-                          placeholder="Responsáveis"
-                          disabled={status === 'finalizado'}
-                          className="flex-1 h-9 text-sm"
-                        />
-                      </div>
-                    );
-                  })}
-                </div>
+                      <Select
+                        value={currentGroupId ?? NONE_GROUP_ID}
+                        onValueChange={(value) => onCleaningChange(dateStr, 'aposReuniao', value === NONE_GROUP_ID ? null : value)}
+                        disabled={status === 'finalizado'}
+                      >
+                        <SelectTrigger className="flex-1 h-9 text-sm">
+                          <SelectValue placeholder="Selecione o grupo" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {GRUPOS_LIMPEZA_APOS_REUNIAO.map(grupo => (
+                            <SelectItem key={grupo.id} value={grupo.id}>{grupo.nome}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  );
+                })}
               </div>
             </div>
-          </CardContent>
-        </Card>
-      )}
+
+            <div className="flex-1 space-y-3 min-w-[280px]">
+              <h4 className="font-medium text-md text-foreground">Limpeza Semanal</h4>
+              <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
+                {weeksForCleaning.map(week => {
+                  const currentResponsavel = designacoesFeitas[week.dateKey]?.limpezaSemanalResponsavel || '';
+                  return (
+                    <div key={week.dateKey} className="flex items-center gap-3">
+                      <Label htmlFor={`limpeza-semanal-${week.dateKey}`} className="w-32 text-sm">{week.weekLabel}</Label>
+                      <Input
+                        id={`limpeza-semanal-${week.dateKey}`}
+                        value={currentResponsavel}
+                        onChange={(e) => onCleaningChange(week.dateKey, 'semanal', e.target.value)}
+                        placeholder="Responsáveis"
+                        disabled={status === 'finalizado'}
+                        className="flex-1 h-9 text-sm"
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

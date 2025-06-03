@@ -112,7 +112,9 @@ export async function getEligibleMembersForFunctionDate(
   dataReuniaoStr: string,
   todosMembros: Membro[],
   designacoesNoDia: Record<string, string | null> = {}, // Designações já feitas neste dia específico
-  membroExcluidoId?: string | null // Para substituição, não considerar este membro
+  membroExcluidoId?: string | null, // Para substituição, não considerar este membro
+  dataReuniaoAnteriorStr?: string | null, // Data da reunião anterior
+  designacoesFeitasNoMesAtual?: DesignacoesFeitas // Designações feitas no mês atual
 ): Promise<Membro[]> {
   const tipoReuniao = dataReuniao.getUTCDay() === DIAS_REUNIAO_CONFIG.meioSemana ? 'meioSemana' : 'publica';
   const membrosDesignadosNesteDia = new Set(Object.values(designacoesNoDia).filter(id => id !== null) as string[]);
@@ -131,26 +133,16 @@ export async function getEligibleMembersForFunctionDate(
       return false;
     }
 
-    if (funcao.tabela !== 'AV' && membrosDesignadosNesteDia.has(membro.id)) {
-        return false;
-    }
-    if (funcao.tabela === 'AV') {
-        let countAVAssignmentsForMember = 0;
-        let memberHasNonAVAssignment = false;
-        for (const funcIdDesignada in designacoesNoDia) {
-            if (designacoesNoDia[funcIdDesignada] === membro.id) {
-                const funcDef = FUNCOES_DESIGNADAS.find(f => f.id === funcIdDesignada);
-                if (funcDef && funcDef.tabela === 'AV') {
-                    countAVAssignmentsForMember++;
-                } else if (funcDef && funcDef.tabela !== 'AV') {
-                    memberHasNonAVAssignment = true;
-                }
-            }
-        }
-        if (memberHasNonAVAssignment) return false; // Cannot do AV if has non-AV assignment
-        // Allow multiple AV assignments if the function itself is AV
+    if (membrosDesignadosNesteDia.has(membro.id)) {
+      return false;
     }
 
+    if (dataReuniaoAnteriorStr && designacoesFeitasNoMesAtual) {
+      const designacoesDoDiaAnterior = designacoesFeitasNoMesAtual[dataReuniaoAnteriorStr];
+      if (designacoesDoDiaAnterior && designacoesDoDiaAnterior[funcao.id] === membro.id) {
+        return false;
+      }
+    }
 
     return true;
   });
@@ -257,7 +249,10 @@ export async function calcularDesignacoesAction(
         dataReuniao,
         dataReuniaoStr,
         membrosDisponiveis,
-        assignmentsForDay
+        assignmentsForDay,
+        undefined,
+        dataReuniaoAnteriorStr,
+        designacoesFeitasNoMesAtual
       );
 
       if (membrosElegiveis.length === 0) {
@@ -336,7 +331,9 @@ export async function findNextBestCandidateForSubstitution(
     dateStr,
     allMembers,
     assignmentsOnTargetDate,
-    originalMemberId 
+    originalMemberId,
+    dataReuniaoAnteriorStr,
+    currentAssignmentsForMonth
   );
 
   if (eligibleMembers.length === 0) return null;
@@ -385,7 +382,9 @@ export async function getPotentialSubstitutesList(
     dateStr,
     allMembers,
     assignmentsOnTargetDate,
-    originalMemberId 
+    originalMemberId,
+    dataReuniaoAnteriorStr,
+    currentAssignmentsForMonth
   );
 
   return eligibleMembers.sort((a, b) => a.nome.localeCompare(b.nome));
