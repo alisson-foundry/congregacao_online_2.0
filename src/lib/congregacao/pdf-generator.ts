@@ -1,6 +1,6 @@
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
-import { format } from 'date-fns';
+import { format, startOfWeek } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type { Membro, DesignacoesFeitas, PublicMeetingAssignment, NVMCDailyAssignments, NVCVidaCristaDynamicPart } from './types';
 import { NOMES_MESES, DIAS_REUNIAO, NOMES_DIAS_SEMANA_COMPLETOS, APP_NAME, FUNCOES_DESIGNADAS, GRUPOS_LIMPEZA_APOS_REUNIAO, NOMES_DIAS_SEMANA_ABREV, NONE_GROUP_ID, NVMC_PART_SECTIONS } from './constants';
@@ -476,9 +476,8 @@ export async function generateMainSchedulePDF(
       .sort((a, b) => a.getTime() - b.getTime());
 
     if (weeksWithLimpezaSemanal.length > 0) {
-      // Reset Y position to match the first table
       currentY = tableStartY;
-      
+
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(14);
       doc.text('Limpeza Semanal', margin + tableWidth + 15, currentY);
@@ -490,8 +489,12 @@ export async function generateMainSchedulePDF(
         const assignments = designacoesFeitas[dateStr];
         const responsible = assignments?.limpezaSemanalResponsavel || '--';
 
+        // Calculate the Monday of the week and format it as DD/MM using imported startOfWeek
+        const mondayOfWeek = startOfWeek(date, { weekStartsOn: 1 }); // weekStartsOn: 1 for Monday
+        const formattedWeekStart = format(mondayOfWeek, "dd/MM", { locale: ptBR });
+
         return [
-          format(date, "dd/MM", { locale: ptBR }),
+          formattedWeekStart,
           responsible
         ];
       });
@@ -535,11 +538,11 @@ const NVMC_MARGIN_BOTTOM = 40;
 const NVMC_MARGIN_LEFT = 40;
 const NVMC_MARGIN_RIGHT = 40;
 
-const NVMC_MAIN_TITLE_FONT_SIZE = 18;
+const NVMC_MAIN_TITLE_FONT_SIZE = 19.8;
 const NVMC_DATE_FONT_SIZE = 11;
-const NVMC_SECTION_FONT_SIZE = 13;
-const NVMC_PART_FONT_SIZE = 10;
-const NVMC_LINE_HEIGHT_FACTOR = 1.3;
+const NVMC_SECTION_FONT_SIZE = 17.6;
+const NVMC_PART_FONT_SIZE = 9.9;
+const NVMC_LINE_HEIGHT_FACTOR = 1.485;
 
 const NVMC_SPACE_AFTER_MAIN_TITLE = 15;
 const NVMC_SPACE_AFTER_DATE = 25;
