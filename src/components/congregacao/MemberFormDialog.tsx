@@ -1,4 +1,3 @@
-
 'use client';
 
 import type { ChangeEvent, FormEvent } from 'react';
@@ -95,11 +94,16 @@ export function MemberFormDialog({ isOpen, onOpenChange, onSave, memberToEdit, o
     }
 
     const { from, to } = selectedDateRange;
-    const fromDateStr = formatarDataParaStorage(from);
-    const toDateStr = to ? formatarDataParaStorage(to) : fromDateStr;
+    // Create dates in Brasília timezone (UTC-3)
+    const fromDate = new Date(from.getFullYear(), from.getMonth(), from.getDate());
+    const toDate = to ? new Date(to.getFullYear(), to.getMonth(), to.getDate()) : fromDate;
+    
+    // Format dates for storage using local timezone
+    const fromDateStr = formatarDataParaStorage(fromDate);
+    const toDateStr = formatarDataParaStorage(toDate);
 
     const novoImpedimento: Impedimento = {
-      from: fromDateStr <= toDateStr ? fromDateStr : toDateStr, // Garante from <= to
+      from: fromDateStr <= toDateStr ? fromDateStr : toDateStr,
       to: fromDateStr <= toDateStr ? toDateStr : fromDateStr,
     };
 
@@ -111,10 +115,10 @@ export function MemberFormDialog({ isOpen, onOpenChange, onSave, memberToEdit, o
 
     setMemberData(prev => {
       const novosImpedimentos = [...prev.impedimentos, novoImpedimento];
-      novosImpedimentos.sort((a, b) => a.from.localeCompare(b.from)); // Ordena pela data de início
+      novosImpedimentos.sort((a, b) => a.from.localeCompare(b.from));
       return { ...prev, impedimentos: novosImpedimentos };
     });
-    setSelectedDateRange(undefined); // Reset picker after adding
+    setSelectedDateRange(undefined);
   };
 
   const removerImpedimento = (indexToRemove: number) => {
@@ -238,9 +242,9 @@ export function MemberFormDialog({ isOpen, onOpenChange, onSave, memberToEdit, o
                 <ul className="list-disc list-inside pl-1 text-sm max-h-32 overflow-y-auto border rounded-md p-2">
                   {memberData.impedimentos.map((imp, index) => {
                       const fromDateParts = imp.from.split('-').map(Number);
-                      const fromDateObj = new Date(Date.UTC(fromDateParts[0], fromDateParts[1] - 1, fromDateParts[2]));
+                      const fromDateObj = new Date(fromDateParts[0], fromDateParts[1] - 1, fromDateParts[2]);
                       const toDateParts = imp.to.split('-').map(Number);
-                      const toDateObj = new Date(Date.UTC(toDateParts[0], toDateParts[1] - 1, toDateParts[2]));
+                      const toDateObj = new Date(toDateParts[0], toDateParts[1] - 1, toDateParts[2]);
 
                       let displayText;
                       if (imp.from === imp.to) {
