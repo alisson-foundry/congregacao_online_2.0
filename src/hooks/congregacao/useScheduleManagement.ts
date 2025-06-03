@@ -174,6 +174,31 @@ export function useScheduleManagement({ membros, updateMemberHistory }: UseSched
     persistScheduleToStateAndCache(null, null, null, null);
   }, [persistScheduleToStateAndCache]);
 
+  const clearScheduleForMonth = useCallback((mesToClear: number, anoToClear: number): boolean => {
+    console.log(`Attempting to clear schedule for ${mesToClear}/${anoToClear}`);
+    const todosOsCronogramas = carregarTodosCronogramas() || {};
+    const yearMonthKey = `${anoToClear}-${String(mesToClear + 1).padStart(2, '0')}`;
+
+    if (todosOsCronogramas[yearMonthKey]) {
+      delete todosOsCronogramas[yearMonthKey];
+      salvarTodosCronogramas(todosOsCronogramas);
+      console.log(`Schedule for ${yearMonthKey} cleared successfully.`);
+
+      // Se o mês e ano limpado for o que está atualmente no estado/cache, também limpamos o estado/cache
+      if (scheduleState.mes === mesToClear && scheduleState.ano === anoToClear) {
+        persistScheduleToStateAndCache(null, null, null, null);
+      }
+      return true;
+    } else {
+      console.log(`No schedule found for ${yearMonthKey} to clear.`);
+      // Se o mês e ano limpado for o que está atualmente no estado/cache (mas não encontrado nos salvos), limpamos o estado/cache
+       if (scheduleState.mes === mesToClear && scheduleState.ano === anoToClear) {
+        persistScheduleToStateAndCache(null, null, null, null);
+      }
+      return false; // Indica que não havia dados para limpar para aquele mês
+    }
+  }, [persistScheduleToStateAndCache, scheduleState.mes, scheduleState.ano]);
+
   const salvarDesignacoes = useCallback(() => {
     if (scheduleState.designacoes && scheduleState.mes !== null && scheduleState.ano !== null) {
       salvarDesignacoesUsuario({
@@ -249,6 +274,7 @@ export function useScheduleManagement({ membros, updateMemberHistory }: UseSched
     confirmManualAssignmentOrSubstitution,
     updateLimpezaAssignment,
     clearMainScheduleAndCache,
+    clearScheduleForMonth,
     salvarDesignacoes,
     finalizarCronograma, // Exportar a função de finalizar
     carregarDesignacoes,

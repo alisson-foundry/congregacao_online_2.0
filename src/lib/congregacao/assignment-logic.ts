@@ -7,6 +7,9 @@ import { formatarDataCompleta, getPermissaoRequerida } from './utils';
 
 // --- Funções Auxiliares de Elegibilidade e Priorização (Refatoradas e Exportadas) ---
 
+// Get IDs of all AV functions dynamically
+const AV_FUNCTION_IDS = FUNCOES_DESIGNADAS.filter(f => f.tabela === 'AV').map(f => f.id);
+
 function encontrarDataReuniaoAnterior(
   dataAtual: Date,
   tipoReuniaoAtual: 'meioSemana' | 'publica',
@@ -25,6 +28,17 @@ function encontrarDataReuniaoAnterior(
   return dataAnterior;
 }
 
+function encontrarDataReuniaoImediataAnterior(
+  dataAtualStr: string,
+  datasDeReuniaoNoMesStr: string[]
+): string | null {
+  const indexAtual = datasDeReuniaoNoMesStr.indexOf(dataAtualStr);
+  if (indexAtual > 0) {
+    return datasDeReuniaoNoMesStr[indexAtual - 1];
+  }
+  return null;
+}
+
 function fezFuncaoNaReuniaoAnterior(
   membroId: string,
   funcaoId: string,
@@ -34,7 +48,17 @@ function fezFuncaoNaReuniaoAnterior(
   if (!dataReuniaoAnteriorStr) return false;
   const designacoesDoDiaAnterior = designacoesFeitasNoMesAtual[dataReuniaoAnteriorStr];
   if (!designacoesDoDiaAnterior) return false;
-  return designacoesDoDiaAnterior[funcaoId] === membroId;
+  
+  // Check if the member had the EXACT same function in the previous meeting
+  // OR, for AV functions, if they had ANY AV function in the previous meeting
+  const isAVFunction = AV_FUNCTION_IDS.includes(funcaoId);
+
+  if (isAVFunction) {
+    // Para funções AV, verifica se o membro fez QUALQUER função AV na reunião anterior
+    return AV_FUNCTION_IDS.some(avFuncId => designacoesDoDiaAnterior[avFuncId] === membroId);
+  } else {
+    return designacoesDoDiaAnterior[funcaoId] === membroId;
+  }
 }
 
 function contarUsoFuncaoNoMes(
@@ -111,15 +135,22 @@ export async function getEligibleMembersForFunctionDate(
   dataReuniao: Date,
   dataReuniaoStr: string,
   todosMembros: Membro[],
-  designacoesNoDia: Record<string, string | null> = {}, // Designações já feitas neste dia específico
-  membroExcluidoId?: string | null, // Para substituição, não considerar este membro
-  dataReuniaoAnteriorStr?: string | null, // Data da reunião anterior
-  designacoesFeitasNoMesAtual?: DesignacoesFeitas // Designações feitas no mês atual
+  designacoesNoDia: Record<string, string | null> = {}, 
+  membroExcluidoId?: string | null, 
+  designacoesFeitasNoMesAtual?: DesignacoesFeitas,
+  allMeetingDatesStr?: string[] 
 ): Promise<Membro[]> {
   const tipoReuniao = dataReuniao.getUTCDay() === DIAS_REUNIAO_CONFIG.meioSemana ? 'meioSemana' : 'publica';
   const membrosDesignadosNesteDia = new Set(Object.values(designacoesNoDia).filter(id => id !== null) as string[]);
 
-  return todosMembros.filter(membro => {
+  let dataReuniaoImediataAnteriorStr = null;
+   if (allMeetingDatesStr) {
+     dataReuniaoImediataAnteriorStr = encontrarDataReuniaoImediataAnterior(dataReuniaoStr, allMeetingDatesStr);
+   }
+
+  const isAVFunction = AV_FUNCTION_IDS.includes(funcao.id);
+
+  const elegiveisBasico = todosMembros.filter(membro => {
     if (membroExcluidoId && membro.id === membroExcluidoId) {
       return false;
     }
@@ -136,32 +167,66 @@ export async function getEligibleMembersForFunctionDate(
     if (membrosDesignadosNesteDia.has(membro.id)) {
       return false;
     }
-
-    if (dataReuniaoAnteriorStr && designacoesFeitasNoMesAtual) {
-      const designacoesDoDiaAnterior = designacoesFeitasNoMesAtual[dataReuniaoAnteriorStr];
-      if (designacoesDoDiaAnterior && designacoesDoDiaAnterior[funcao.id] === membro.id) {
-        return false;
-      }
-    }
-
-    return true;
+    return true; // Member passes basic eligibility
   });
+
+  // Aplicar a regra de Prioridade 1 como filtro ABSOLUTO para AVs se houver alternativa elegível GERAL
+  if (isAVFunction && dataReuniaoImediataAnteriorStr && designacoesFeitasNoMesAtual) {
+      // Primeiro, encontre todos os membros que não fizeram AV na reunião anterior
+      const todosQueNaoFizeramAVNaAnterior = todosMembros.filter(membro =>
+          !fezFuncaoNaReuniaoAnterior(membro.id, funcao.id, dataReuniaoImediataAnteriorStr, designacoesFeitasNoMesAtual)
+      );
+
+      // Agora, filtre esta lista pelos critérios básicos de elegibilidade
+      const elegiveisQueNaoFizeramAVNaAnteriorEBasico = todosQueNaoFizeramAVNaAnterior.filter(membro =>
+          // Replicar a lógica de filtro básico aqui
+          !(membroExcluidoId && membro.id === membroExcluidoId) &&
+          !!(getPermissaoRequerida(funcao.id, tipoReuniao) && membro.permissoesBase[getPermissaoRequerida(funcao.id, tipoReuniao)!]) &&
+          !membro.impedimentos.some(imp => dataReuniaoStr >= imp.from && dataReuniaoStr <= imp.to) &&
+          !membrosDesignadosNesteDia.has(membro.id)
+      );
+
+
+      if (elegiveisQueNaoFizeramAVNaAnteriorEBasico.length > 0) {
+          // Se houver pelo menos um membro elegível GERALMENTe que NÃO fez AV na reunião anterior,
+          // APENAS esses membros são considerados elegíveis para esta designação AV.
+          return elegiveisQueNaoFizeramAVNaAnteriorEBasico;
+      } else {
+          // Se NENHUM membro elegível GERALMENTE que NÃO fez AV na reunião anterior foi encontrado,
+          // então não podemos evitar a repetição imediata com base nesta regra.
+          // Retornamos a lista básica completa (que só contém repetidores AV neste ponto),
+          // e a priorização ocorrerá com base nas outras regras.
+          return elegiveisBasico;
+      }
+
+  } else {
+    // Para funções não AV ou se não há dados da reunião anterior,
+    // a elegibilidade básica é suficiente.
+    return elegiveisBasico;
+  }
 }
 
 export async function sortMembersByPriority(
   membrosElegiveis: Membro[],
   funcao: FuncaoDesignada,
-  dataReuniaoAnteriorStr: string | null,
   designacoesFeitasNoMesAtual: DesignacoesFeitas,
   dataReuniaoStr: string,
-  membrosComHistoricoCompleto: Membro[] // Para acessar o histórico original completo
+  membrosComHistoricoCompleto: Membro[], // Para acessar o histórico original completo
+  allMeetingDatesStr?: string[] // Adicionado para encontrar a reunião imediatamente anterior
 ): Promise<Membro[]> {
   
   const membrosOrdenados = [...membrosElegiveis];
 
+  // Encontrar a data da reunião imediatamente anterior
+  let dataReuniaoImediataAnteriorStr = null;
+  if (allMeetingDatesStr) {
+    dataReuniaoImediataAnteriorStr = encontrarDataReuniaoImediataAnterior(dataReuniaoStr, allMeetingDatesStr);
+  }
+
   membrosOrdenados.sort((membroA, membroB) => {
-    const fezAFuncaoAnterior = fezFuncaoNaReuniaoAnterior(membroA.id, funcao.id, dataReuniaoAnteriorStr, designacoesFeitasNoMesAtual);
-    const fezBFuncaoAnterior = fezFuncaoNaReuniaoAnterior(membroB.id, funcao.id, dataReuniaoAnteriorStr, designacoesFeitasNoMesAtual);
+    // Prioridade 1: Anti-Repetição Imediata - Usar a reunião imediatamente anterior
+    const fezAFuncaoAnterior = fezFuncaoNaReuniaoAnterior(membroA.id, funcao.id, dataReuniaoImediataAnteriorStr, designacoesFeitasNoMesAtual);
+    const fezBFuncaoAnterior = fezFuncaoNaReuniaoAnterior(membroB.id, funcao.id, dataReuniaoImediataAnteriorStr, designacoesFeitasNoMesAtual);
     if (fezAFuncaoAnterior && !fezBFuncaoAnterior) return 1; 
     if (!fezAFuncaoAnterior && fezBFuncaoAnterior) return -1;
 
@@ -220,6 +285,9 @@ export async function calcularDesignacoesAction(
     return { error: "Nenhuma data de reunião encontrada para este mês." };
   }
   datasDeReuniaoNoMes.sort((a, b) => a.getTime() - b.getTime());
+  
+  // Get all meeting dates as strings for easy lookup
+  const allMeetingDatesStr = datasDeReuniaoNoMes.map(d => formatarDataCompleta(d));
 
   for (const dataReuniao of datasDeReuniaoNoMes) {
     const dataReuniaoStr = formatarDataCompleta(dataReuniao);
@@ -251,8 +319,8 @@ export async function calcularDesignacoesAction(
         membrosDisponiveis,
         assignmentsForDay,
         undefined,
-        dataReuniaoAnteriorStr,
-        designacoesFeitasNoMesAtual
+        designacoesFeitasNoMesAtual,
+        allMeetingDatesStr
       );
 
       if (membrosElegiveis.length === 0) {
@@ -265,10 +333,10 @@ export async function calcularDesignacoesAction(
       const membrosOrdenados = await sortMembersByPriority(
         membrosElegiveis,
         funcao,
-        dataReuniaoAnteriorStr, 
         designacoesFeitasNoMesAtual,
         dataReuniaoStr,
-        membros 
+        membros,
+        allMeetingDatesStr
       );
 
       const membroEscolhido = membrosOrdenados[0];
@@ -281,15 +349,6 @@ export async function calcularDesignacoesAction(
             designacoesFeitasNoMesAtual[dataReuniaoStr][funcao.id] = null;
          }
       }
-    }
-
-    const funcoesAVParaEsteTipo = FUNCOES_DESIGNADAS.filter(
-        f => f.tipoReuniao.includes(tipoReuniaoAtual) && f.tabela === 'AV'
-    );
-    for (const funcaoAV of funcoesAVParaEsteTipo) {
-        if (designacoesFeitasNoMesAtual[dataReuniaoStr][funcaoAV.id] === undefined) { 
-             designacoesFeitasNoMesAtual[dataReuniaoStr][funcaoAV.id] = null;
-        }
     }
   }
   
@@ -304,7 +363,8 @@ export async function findNextBestCandidateForSubstitution(
   functionId: string,
   originalMemberId: string,
   allMembers: Membro[],
-  currentAssignmentsForMonth: DesignacoesFeitas
+  currentAssignmentsForMonth: DesignacoesFeitas,
+  allMeetingDatesStr: string[]
 ): Promise<Membro | null> {
   const targetDate = new Date(dateStr + "T00:00:00"); 
   const targetFunction = FUNCOES_DESIGNADAS.find(f => f.id === functionId);
@@ -316,7 +376,7 @@ export async function findNextBestCandidateForSubstitution(
     if (v !== undefined) assignmentsOnTargetDate[k] = v === undefined ? null : v;
   });
   
-  const datasDeReuniaoNoMesFicticia : Date[] = Object.keys(currentAssignmentsForMonth)
+  const datasDeReuniaoNoMesFicticia : Date[] = allMeetingDatesStr
     .map(d => new Date(d + "T00:00:00"))
     .sort((a,b) => a.getTime() - b.getTime());
   
@@ -331,9 +391,9 @@ export async function findNextBestCandidateForSubstitution(
     dateStr,
     allMembers,
     assignmentsOnTargetDate,
-    originalMemberId,
-    dataReuniaoAnteriorStr,
-    currentAssignmentsForMonth
+    undefined,
+    currentAssignmentsForMonth,
+    allMeetingDatesStr
   );
 
   if (eligibleMembers.length === 0) return null;
@@ -341,10 +401,10 @@ export async function findNextBestCandidateForSubstitution(
   const sortedMembers = await sortMembersByPriority(
     eligibleMembers,
     targetFunction,
-    dataReuniaoAnteriorStr, 
     currentAssignmentsForMonth,
     dateStr,
-    allMembers
+    allMembers,
+    allMeetingDatesStr
   );
   
   return sortedMembers.length > 0 ? sortedMembers[0] : null;
@@ -355,7 +415,8 @@ export async function getPotentialSubstitutesList(
   functionId: string,
   originalMemberId: string,
   allMembers: Membro[],
-  currentAssignmentsForMonth: DesignacoesFeitas
+  currentAssignmentsForMonth: DesignacoesFeitas,
+  allMeetingDatesStr: string[]
 ): Promise<Membro[]> {
   const targetDate = new Date(dateStr + "T00:00:00");
   const targetFunction = FUNCOES_DESIGNADAS.find(f => f.id === functionId);
@@ -367,7 +428,7 @@ export async function getPotentialSubstitutesList(
     if (v !== undefined) assignmentsOnTargetDate[k] = v === undefined ? null : v;
   });
   
-  const datasDeReuniaoNoMesFicticia : Date[] = Object.keys(currentAssignmentsForMonth)
+  const datasDeReuniaoNoMesFicticia : Date[] = allMeetingDatesStr
     .map(d => new Date(d + "T00:00:00"))
     .sort((a,b) => a.getTime() - b.getTime());
   
@@ -382,9 +443,9 @@ export async function getPotentialSubstitutesList(
     dateStr,
     allMembers,
     assignmentsOnTargetDate,
-    originalMemberId,
-    dataReuniaoAnteriorStr,
-    currentAssignmentsForMonth
+    undefined,
+    currentAssignmentsForMonth,
+    allMeetingDatesStr
   );
 
   return eligibleMembers.sort((a, b) => a.nome.localeCompare(b.nome));

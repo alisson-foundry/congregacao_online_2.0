@@ -178,6 +178,7 @@ export default function DesignacoesPage() {
             onSaveProgress={handleSaveProgressClick} 
             onFinalizeSchedule={handleFinalizeScheduleClick}
             onMonthYearChangeRequest={carregarDesignacoes} 
+            onClearScheduleForMonth={scheduleManagement.clearScheduleForMonth}
           />
         </TabsContent>
 

@@ -26,8 +26,7 @@ export const PERMISSOES_BASE: PermissaoBase[] = [
   { id: 'leitorQui', nome: 'Leitor Quinta', grupo: 'Leitura/Presidência' },
   { id: 'leitorDom', nome: 'Leitor Domingo', grupo: 'Leitura/Presidência' },
   { id: 'presidente', nome: 'Presidente', grupo: 'Leitura/Presidência' },
-  { id: 'avQui', nome: 'Áudio/Vídeo Quinta', grupo: 'Áudio/Vídeo' },
-  { id: 'avDom', nome: 'Áudio/Vídeo Domingo', grupo: 'Áudio/Vídeo' },
+  { id: 'av', nome: 'Áudio/Vídeo', grupo: 'Áudio/Vídeo' },
 ];
 
 export const FUNCOES_DESIGNADAS: FuncaoDesignada[] = [
@@ -45,10 +44,10 @@ export const FUNCOES_DESIGNADAS: FuncaoDesignada[] = [
   { id: 'leitorQui', nome: 'Leitor A Sentinela (Qui)', tipoReuniao: ['meioSemana'], tabela: 'LeitorPresidente', permissaoRequeridaBase: 'leitorQui' },
   { id: 'leitorDom', nome: 'Leitor A Sentinela (Dom)', tipoReuniao: ['publica'], tabela: 'LeitorPresidente', permissaoRequeridaBase: 'leitorDom' },
   // Áudio/Vídeo
-  { id: 'avQui', nome: 'Áudio/Vídeo', tipoReuniao: ['meioSemana'], tabela: 'AV', permissaoRequeridaBase: 'avQui' },
-  { id: 'indicadorZoomQui', nome: 'Indicador Zoom', tipoReuniao: ['meioSemana'], tabela: 'AV', permissaoRequeridaBase: 'avQui' },
-  { id: 'avDom', nome: 'Áudio/Vídeo', tipoReuniao: ['publica'], tabela: 'AV', permissaoRequeridaBase: 'avDom' },
-  { id: 'indicadorZoomDom', nome: 'Indicador Zoom', tipoReuniao: ['publica'], tabela: 'AV', permissaoRequeridaBase: 'avDom' },
+  { id: 'avQui', nome: 'Áudio/Vídeo', tipoReuniao: ['meioSemana'], tabela: 'AV', permissaoRequeridaBase: 'av' },
+  { id: 'indicadorZoomQui', nome: 'Indicador Zoom', tipoReuniao: ['meioSemana'], tabela: 'AV', permissaoRequeridaBase: 'av' },
+  { id: 'avDom', nome: 'Áudio/Vídeo', tipoReuniao: ['publica'], tabela: 'AV', permissaoRequeridaBase: 'av' },
+  { id: 'indicadorZoomDom', nome: 'Indicador Zoom', tipoReuniao: ['publica'], tabela: 'AV', permissaoRequeridaBase: 'av' },
 ];
 
 export const TIPOS_DESIGNACAO: Record<string, string> = FUNCOES_DESIGNADAS.reduce((acc: Record<string, string>, funcao) => {

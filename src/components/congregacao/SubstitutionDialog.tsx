@@ -19,7 +19,7 @@ import { AlertTriangle, Loader2, Users, ListChecks } from 'lucide-react';
 import type { Membro, SubstitutionDetails, DesignacoesFeitas, FuncaoDesignada as FuncaoDesignadaType } from '@/lib/congregacao/types';
 import { findNextBestCandidateForSubstitution, getPotentialSubstitutesList } from '@/lib/congregacao/assignment-logic';
 import { useToast } from '@/hooks/use-toast';
-import { getRealFunctionId, getPermissaoRequerida } from '@/lib/congregacao/utils';
+import { getRealFunctionId, getPermissaoRequerida, formatarDataCompleta } from '@/lib/congregacao/utils';
 import { FUNCOES_DESIGNADAS, DIAS_REUNIAO as DIAS_REUNIAO_CONFIG, PERMISSOES_BASE } from '@/lib/congregacao/constants';
 
 interface SubstitutionDialogProps {
@@ -51,6 +51,19 @@ export function SubstitutionDialog({
   const { toast } = useToast();
 
   const { date, functionId: initialFunctionId, originalMemberId, originalMemberName, currentFunctionGroupId } = substitutionDetails;
+
+  // Derive a sorted list of all meeting date strings from the current month's assignments
+  const allMeetingDatesStr = useMemo(() => {
+      return Object.keys(currentAssignmentsForMonth)
+          .filter(dateStr => {
+              // Optional: Filter to include only actual meeting dates if needed
+              // const dateObj = new Date(dateStr + "T00:00:00Z");
+              // const dayOfWeek = dateObj.getUTCDay();
+              // return dayOfWeek === DIAS_REUNIAO_CONFIG.meioSemana || dayOfWeek === DIAS_REUNIAO_CONFIG.publica;
+              return true; // Assume all keys in currentAssignmentsForMonth are meeting dates
+          })
+          .sort(); // Sorts date strings chronologically (YYYY-MM-DD)
+  }, [currentAssignmentsForMonth]);
 
   // Resolve the function ID to be specific (e.g., 'indicadorExternoDom')
   const resolvedFunctionId = useMemo(() => {
@@ -101,7 +114,8 @@ export function SubstitutionDialog({
         resolvedFunctionId,
         originalMemberId || '',
         allMembers,
-        currentAssignmentsForMonth
+        currentAssignmentsForMonth,
+        allMeetingDatesStr
       );
 
       if (candidate) {
@@ -149,7 +163,8 @@ export function SubstitutionDialog({
         resolvedFunctionId,
         originalMemberId || '',
         allMembers,
-        currentAssignmentsForMonth
+        currentAssignmentsForMonth,
+        allMeetingDatesStr
       );
 
       if (substitutes.length > 0) {
