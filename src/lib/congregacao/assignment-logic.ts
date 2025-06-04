@@ -19,7 +19,7 @@ function encontrarDataReuniaoAnterior(
   const diaSemanaAlvo = tipoReuniaoAtual === 'meioSemana' ? DIAS_REUNIAO.meioSemana : DIAS_REUNIAO.publica;
   let dataAnterior: Date | null = null;
   for (const dataCand of datasDeReuniaoNoMes) {
-    if (dataCand < dataAtual && dataCand.getUTCDay() === diaSemanaAlvo) {
+    if (dataCand < dataAtual && dataCand.getDay() === diaSemanaAlvo) {
       if (dataAnterior === null || dataCand > dataAnterior) {
         dataAnterior = new Date(dataCand);
       }
@@ -140,7 +140,7 @@ export async function getEligibleMembersForFunctionDate(
   designacoesFeitasNoMesAtual?: DesignacoesFeitas,
   allMeetingDatesStr?: string[] 
 ): Promise<Membro[]> {
-  const tipoReuniao = dataReuniao.getUTCDay() === DIAS_REUNIAO_CONFIG.meioSemana ? 'meioSemana' : 'publica';
+  const tipoReuniao = dataReuniao.getDay() === DIAS_REUNIAO_CONFIG.meioSemana ? 'meioSemana' : 'publica';
   const membrosDesignadosNesteDia = new Set(Object.values(designacoesNoDia).filter(id => id !== null) as string[]);
 
   let dataReuniaoImediataAnteriorStr = null;
@@ -274,8 +274,8 @@ export async function calcularDesignacoesAction(
   const primeiroDiaDoMes = new Date(Date.UTC(ano, mes, 1));
   const ultimoDiaDoMes = new Date(Date.UTC(ano, mes + 1, 0));
 
-  for (let dia = new Date(primeiroDiaDoMes); dia <= ultimoDiaDoMes; dia.setUTCDate(dia.getUTCDate() + 1)) {
-    const diaDaSemana = dia.getUTCDay();
+  for (let dia = new Date(primeiroDiaDoMes); dia <= ultimoDiaDoMes; dia.setDate(dia.getDate() + 1)) {
+    const diaDaSemana = dia.getDay();
     if (diaDaSemana === DIAS_REUNIAO.meioSemana || diaDaSemana === DIAS_REUNIAO.publica) {
       datasDeReuniaoNoMes.push(new Date(dia));
     }
@@ -297,7 +297,7 @@ export async function calcularDesignacoesAction(
       limpezaSemanalResponsavel: designacoesFeitasNoMesAtual[dataReuniaoStr]?.limpezaSemanalResponsavel || '',
     };
     
-    const tipoReuniaoAtual = dataReuniao.getUTCDay() === DIAS_REUNIAO.meioSemana ? 'meioSemana' : 'publica';
+    const tipoReuniaoAtual = dataReuniao.getDay() === DIAS_REUNIAO.meioSemana ? 'meioSemana' : 'publica';
     
     const funcoesParaGeracaoAutomatica = FUNCOES_DESIGNADAS.filter(
       f => f.tipoReuniao.includes(tipoReuniaoAtual)
@@ -380,7 +380,7 @@ export async function findNextBestCandidateForSubstitution(
     .map(d => new Date(d + "T00:00:00"))
     .sort((a,b) => a.getTime() - b.getTime());
   
-  const tipoReuniaoAtual = targetDate.getUTCDay() === DIAS_REUNIAO_CONFIG.meioSemana ? 'meioSemana' : 'publica';
+  const tipoReuniaoAtual = targetDate.getDay() === DIAS_REUNIAO_CONFIG.meioSemana ? 'meioSemana' : 'publica';
   const dataReuniaoAnteriorObj = encontrarDataReuniaoAnterior(targetDate, tipoReuniaoAtual, datasDeReuniaoNoMesFicticia, DIAS_REUNIAO_CONFIG);
   const dataReuniaoAnteriorStr = dataReuniaoAnteriorObj ? formatarDataCompleta(dataReuniaoAnteriorObj) : null;
 
@@ -432,7 +432,7 @@ export async function getPotentialSubstitutesList(
     .map(d => new Date(d + "T00:00:00"))
     .sort((a,b) => a.getTime() - b.getTime());
   
-  const tipoReuniaoAtual = targetDate.getUTCDay() === DIAS_REUNIAO_CONFIG.meioSemana ? 'meioSemana' : 'publica';
+  const tipoReuniaoAtual = targetDate.getDay() === DIAS_REUNIAO_CONFIG.meioSemana ? 'meioSemana' : 'publica';
   const dataReuniaoAnteriorObj = encontrarDataReuniaoAnterior(targetDate, tipoReuniaoAtual, datasDeReuniaoNoMesFicticia, DIAS_REUNIAO_CONFIG);
   const dataReuniaoAnteriorStr = dataReuniaoAnteriorObj ? formatarDataCompleta(dataReuniaoAnteriorObj) : null;
 
@@ -450,4 +450,3 @@ export async function getPotentialSubstitutesList(
 
   return eligibleMembers.sort((a, b) => a.nome.localeCompare(b.nome));
 }
-

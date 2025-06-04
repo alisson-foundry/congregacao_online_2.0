@@ -58,7 +58,7 @@ export function useScheduleManagement({ membros, updateMemberHistory }: UseSched
     const membrosComHistoricoAtualizado = [...membros].map(m => {
       const membroModificado = { ...m, historicoDesignacoes: { ...m.historicoDesignacoes } };
       Object.keys(membroModificado.historicoDesignacoes).forEach(histDateStr => {
-        const histDateObj = new Date(histDateStr + "T00:00:00");
+        const histDateObj = new Date(histDateStr);
         if (histDateObj.getFullYear() === scheduleAno && histDateObj.getMonth() === scheduleMes) {
           const funcaoIdNoHistorico = membroModificado.historicoDesignacoes[histDateStr];
           if (funcaoIdNoHistorico && !funcaoIdNoHistorico.startsWith('av') && !funcaoIdNoHistorico.startsWith('limpeza')) {
@@ -67,7 +67,7 @@ export function useScheduleManagement({ membros, updateMemberHistory }: UseSched
         }
       });
       Object.entries(currentScheduleForMonth).forEach(([dateStr, funcoesDoDia]) => {
-        const dataObj = new Date(dateStr + "T00:00:00");
+        const dataObj = new Date(dateStr);
         if (dataObj.getFullYear() === scheduleAno && dataObj.getMonth() === scheduleMes) {
           Object.entries(funcoesDoDia).forEach(([funcaoId, membroId]) => {
             if (membroId === m.id) {

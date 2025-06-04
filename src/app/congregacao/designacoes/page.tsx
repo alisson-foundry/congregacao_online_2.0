@@ -10,7 +10,7 @@ import { NvmcAssignmentsCard } from '@/components/congregacao/NvmcAssignmentsCar
 import { FieldServiceAssignmentsCard } from '@/components/congregacao/FieldServiceAssignmentsCard';
 import { SubstitutionDialog } from '@/components/congregacao/SubstitutionDialog';
 import type { Membro, DesignacoesFeitas, SubstitutionDetails, AllNVMCAssignments, NVMCDailyAssignments, AllFieldServiceAssignments, FieldServiceMonthlyData } from '@/lib/congregacao/types';
-import { APP_NAME, NOMES_MESES } from '@/lib/congregacao/constants';
+import { APP_NAME, NOMES_MESES, DIAS_REUNIAO } from '@/lib/congregacao/constants';
 import { 
   carregarNVMCAssignments,
   salvarNVMCAssignments,
@@ -19,7 +19,7 @@ import {
   salvarFieldServiceAssignments,
   limparFieldServiceAssignments as limparStorageFieldServiceAssignments
 } from '@/lib/congregacao/storage';
-import { formatarDataParaChave } from '@/lib/congregacao/utils';
+import { formatarDataParaChave, getRealFunctionId } from '@/lib/congregacao/utils';
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ListChecks, BookOpen, BookUser, ClipboardList } from 'lucide-react';
@@ -108,21 +108,32 @@ export default function DesignacoesPage() {
       toast({ title: "Erro", description: "Não foi possível processar a substituição. Dados do cronograma ausentes.", variant: "destructive" });
       return;
     }
-  
+
     const { date, functionId, originalMemberId } = substitutionDetails;
     const isNewDesignation = !originalMemberId || originalMemberId === '';
 
+    const dataObj = new Date(date);
+    const diaSemana = dataObj.getDay();
+    const isMeioSemana = diaSemana === DIAS_REUNIAO.meioSemana;
+    const isPublica = diaSemana === DIAS_REUNIAO.publica;
+
+    // Resolve the function ID based on the day
+    const resolvedFunctionId = getRealFunctionId(functionId, date);
+
+    console.log('Original functionId:', functionId);
+    console.log('Resolved functionId:', resolvedFunctionId);
+
     scheduleManagement.confirmManualAssignmentOrSubstitution(
       date,
-      functionId,
+      resolvedFunctionId,
       newMemberId,
       originalMemberId,
       scheduleManagement.scheduleData,
       scheduleManagement.scheduleMes,
       scheduleManagement.scheduleAno
     );
-  
-    toast({ 
+
+    toast({
       title: isNewDesignation ? "Designação Realizada" : "Substituição Realizada", 
       description: isNewDesignation ? "A designação foi atribuída com sucesso." : "A designação foi atualizada com sucesso." 
     });

@@ -99,21 +99,26 @@ export function getPermissaoRequerida(funcaoId: string, tipoReuniao: 'meioSemana
 }
 
 
-export function getRealFunctionId(columnKey: string, date: string, tipoTabela: string): string {
-  const dateObj = new Date(date + "T00:00:00Z");
-  const isMeioSemana = dateObj.getUTCDay() === DIAS_REUNIAO.meioSemana;
+export function getRealFunctionId(functionId: string, date: string): string {
+  const dataObj = new Date(date);
+  const diaSemana = dataObj.getDay();
+  const isMeioSemana = diaSemana === DIAS_REUNIAO.meioSemana;
+  const isPublica = diaSemana === DIAS_REUNIAO.publica;
 
-  if (tipoTabela === 'Indicadores') {
-    if (columnKey === 'indicadorExterno') return isMeioSemana ? 'indicadorExternoQui' : 'indicadorExternoDom';
-    if (columnKey === 'indicadorPalco') return isMeioSemana ? 'indicadorPalcoQui' : 'indicadorPalcoDom';
-  } else if (tipoTabela === 'Volantes') {
-    if (columnKey === 'volante1') return isMeioSemana ? 'volante1Qui' : 'volante1Dom';
-    if (columnKey === 'volante2') return isMeioSemana ? 'volante2Qui' : 'volante2Dom';
-  } else if (tipoTabela === 'LeitorPresidente') {
-    if (columnKey === 'leitor') return isMeioSemana ? 'leitorQui' : 'leitorDom';
+  if (functionId === 'indicadorExterno') {
+    return isMeioSemana ? 'indicadorExternoQui' : 'indicadorExternoDom';
+  } else if (functionId === 'indicadorPalco') {
+    return isMeioSemana ? 'indicadorPalcoQui' : 'indicadorPalcoDom';
+  } else if (functionId === 'volante1') {
+    return isMeioSemana ? 'volante1Qui' : 'volante1Dom';
+  } else if (functionId === 'volante2') {
+    return isMeioSemana ? 'volante2Qui' : 'volante2Dom';
+  } else if (functionId === 'av') {
+    return isMeioSemana ? 'avQui' : 'avDom';
+  } else if (functionId === 'indicadorZoom') {
+    return isMeioSemana ? 'indicadorZoomQui' : 'indicadorZoomDom';
   }
-
-  return columnKey;
+  return functionId;
 }
 
 export function parseNvmcProgramText(text: string): ParsedNvmcProgram {

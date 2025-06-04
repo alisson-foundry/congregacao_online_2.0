@@ -14,8 +14,8 @@ export const NOMES_DIAS_SEMANA_COMPLETOS: string[] = [
 
 
 export const DIAS_REUNIAO: DiasReuniao = {
-  meioSemana: 4, // Quinta-feira
-  publica: 0     // Domingo
+  publica: 0, // Domingo (UTC/Local - geralmente 0 em muitos fusos)
+  meioSemana: 4, // Quinta-feira (Local - geralmente 4)
 };
 
 export const PERMISSOES_BASE: PermissaoBase[] = [

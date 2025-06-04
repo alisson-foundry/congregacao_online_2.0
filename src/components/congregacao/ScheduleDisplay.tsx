@@ -14,7 +14,6 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { EditableMemberCell } from './EditableMemberCell';
 
-
 export function prepararDadosTabela(
   designacoesFeitas: DesignacoesFeitas,
   mes: number,
@@ -29,11 +28,17 @@ export function prepararDadosTabela(
 
   Object.keys(designacoesFeitas).forEach(dataStr => {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(dataStr)) return;
-    const dataObj = new Date(dataStr + 'T00:00:00');
+    const [yearStr, monthStr, dayStr] = dataStr.split('-');
+    const year = parseInt(yearStr, 10);
+    const month = parseInt(monthStr, 10) - 1; // Month is 0-indexed
+    const day = parseInt(dayStr, 10);
+
+    const dataObj = new Date(year, month, day);
+
     if (isNaN(dataObj.getTime())) return;
 
     if (dataObj.getFullYear() === ano && dataObj.getMonth() === mes) {
-        const diaSemana = dataObj.getUTCDay();
+        const diaSemana = dataObj.getDay();
         if(diaSemana === DIAS_REUNIAO.meioSemana || diaSemana === DIAS_REUNIAO.publica) {
              datasNoMesComReuniao.add(dataStr);
         }
@@ -41,6 +46,7 @@ export function prepararDadosTabela(
   });
 
   const sortedDates = Array.from(datasNoMesComReuniao).sort();
+  console.log('prepararDadosTabela - sortedDates:', sortedDates);
   sortedDates.forEach(d => fullDateStrings.push(d));
 
   if (tipoTabela === 'Indicadores') {
@@ -51,9 +57,23 @@ export function prepararDadosTabela(
     ];
 
     sortedDates.forEach(dataStr => {
-      const dataObj = new Date(dataStr + 'T00:00:00');
-      const dia = dataObj.getUTCDate();
-      const diaSemanaIndex = dataObj.getUTCDay();
+      const [yearStr, monthStr, dayStr] = dataStr.split('-');
+      const year = parseInt(yearStr, 10);
+      const month = parseInt(monthStr, 10) - 1; // Month is 0-indexed
+      const day = parseInt(dayStr, 10);
+
+      const dataObj = new Date(year, month, day);
+
+      const dia = dataObj.getDate();
+      const diaSemanaIndex = dataObj.getDay();
+
+      // Logs for depuração
+      console.log('Data (prepararDadosTabela loop): ', dataObj.toISOString());
+      console.log('getDay() (prepararDadosTabela loop): ', diaSemanaIndex);
+      console.log('Dia da semana esperado (Local) (prepararDadosTabela loop):', dataObj.toLocaleDateString('pt-BR', { weekday: 'long' }));
+      console.log('DIAS_REUNIAO.meioSemana (in prepararDadosTabela loop):', DIAS_REUNIAO.meioSemana);
+      // Fim dos logs para depuração
+
       const diaAbrev = NOMES_DIAS_SEMANA_ABREV[diaSemanaIndex];
 
       let badgeColorClass = DIAS_SEMANA_REUNIAO_CORES.outroDia;
@@ -83,7 +103,7 @@ export function prepararDadosTabela(
       }
       const remappedDataIndicadores = dataTabela.map((row, index) => {
         const dataObj = new Date(sortedDates[index] + 'T00:00:00');
-        const diaSemanaIndex = dataObj.getUTCDay();
+        const diaSemanaIndex = dataObj.getDay();
         return {
             ...row,
             indicadorExterno: row[MAPPED_COL_KEYS_INDICADORES.indicadorExterno(diaSemanaIndex)] ?? null,
@@ -104,9 +124,15 @@ export function prepararDadosTabela(
     };
     const dataTabelaVolantes: Designacao[] = [];
     sortedDates.forEach(dataStr => {
-      const dataObj = new Date(dataStr + 'T00:00:00');
-      const dia = dataObj.getUTCDate();
-      const diaSemanaIndex = dataObj.getUTCDay();
+      const [yearStr, monthStr, dayStr] = dataStr.split('-');
+      const year = parseInt(yearStr, 10);
+      const month = parseInt(monthStr, 10) - 1; // Month is 0-indexed
+      const day = parseInt(dayStr, 10);
+
+      const dataObj = new Date(year, month, day);
+
+      const dia = dataObj.getDate();
+      const diaSemanaIndex = dataObj.getDay();
       const diaAbrev = NOMES_DIAS_SEMANA_ABREV[diaSemanaIndex];
       let badgeColorClass = DIAS_SEMANA_REUNIAO_CORES.outroDia;
       if (diaSemanaIndex === DIAS_REUNIAO.meioSemana) badgeColorClass = DIAS_SEMANA_REUNIAO_CORES.meioSemana;
@@ -134,9 +160,15 @@ export function prepararDadosTabela(
     };
     const dataTabelaAV: Designacao[] = [];
     sortedDates.forEach(dataStr => {
-      const dataObj = new Date(dataStr + 'T00:00:00');
-      const dia = dataObj.getUTCDate();
-      const diaSemanaIndex = dataObj.getUTCDay();
+      const [yearStr, monthStr, dayStr] = dataStr.split('-');
+      const year = parseInt(yearStr, 10);
+      const month = parseInt(monthStr, 10) - 1; // Month is 0-indexed
+      const day = parseInt(dayStr, 10);
+
+      const dataObj = new Date(year, month, day);
+
+      const dia = dataObj.getDate();
+      const diaSemanaIndex = dataObj.getDay();
       const diaAbrev = NOMES_DIAS_SEMANA_ABREV[diaSemanaIndex];
       let badgeColorClass = DIAS_SEMANA_REUNIAO_CORES.outroDia;
       if (diaSemanaIndex === DIAS_REUNIAO.meioSemana) badgeColorClass = DIAS_SEMANA_REUNIAO_CORES.meioSemana;
@@ -169,12 +201,14 @@ interface ScheduleDisplayProps {
 // Helper function to get ISO week number
 function getISOWeek(date: Date) {
   const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-  const dayNum = d.getUTCDay() || 7;
+  const dayNum = d.getDay() || 7;
   d.setUTCDate(d.getUTCDate() + 4 - dayNum);
   const yearStart = new Date(Date.UTC(d.getUTCFullYear(),0,1));
   return Math.ceil((((d.valueOf() - yearStart.valueOf()) / 86400000) + 1)/7);
 }
 
+// Procure onde está definido DIAS_REUNIAO - Este log será adicionado fora das funções principais para mostrar o valor importado.
+console.log('DIAS_REUNIAO completo (module level):', DIAS_REUNIAO);
 
 export function ScheduleDisplay({
   status,
@@ -187,65 +221,10 @@ export function ScheduleDisplay({
 }: ScheduleDisplayProps) {
   const { toast } = useToast();
 
-  const prepararDadosTabela = (tipoTabela: 'Indicadores' | 'Volantes' | 'AV') => {
-    const datasDeReuniao: Date[] = [];
-    const primeiroDiaDoMes = new Date(Date.UTC(ano, mes, 1));
-    const ultimoDiaDoMes = new Date(Date.UTC(ano, mes + 1, 0));
-
-    for (let d = new Date(primeiroDiaDoMes); d <= ultimoDiaDoMes; d.setUTCDate(d.getUTCDate() + 1)) {
-      const diaSemana = d.getUTCDay();
-      if (diaSemana === DIAS_REUNIAO.meioSemana || diaSemana === DIAS_REUNIAO.publica) {
-        datasDeReuniao.push(new Date(d));
-      }
-    }
-
-    const fullDateStrings = datasDeReuniao.map(d => formatarDataCompleta(d));
-    const data = datasDeReuniao.map(d => {
-      const dateStr = formatarDataCompleta(d);
-      const diaSemanaIndex = d.getUTCDay();
-      const diaAbrev = NOMES_DIAS_SEMANA_ABREV[diaSemanaIndex];
-      const badgeColorClass = diaSemanaIndex === DIAS_REUNIAO.meioSemana ? DIAS_SEMANA_REUNIAO_CORES.meioSemana : DIAS_SEMANA_REUNIAO_CORES.publica;
-      const tipoReuniao = diaSemanaIndex === DIAS_REUNIAO.meioSemana ? 'meioSemana' : 'publica';
-
-      const row: any = {
-        data: `${d.getUTCDate().toString().padStart(2, '0')} ${diaAbrev}`,
-        diaSemanaBadgeColor: badgeColorClass,
-      };
-
-      const designacoesDoDia = designacoesFeitas[dateStr] || {};
-
-      if (tipoTabela === 'Indicadores') {
-        row.indicadorExterno = diaSemanaIndex === DIAS_REUNIAO.meioSemana 
-          ? designacoesDoDia['indicadorExternoQui'] 
-          : designacoesDoDia['indicadorExternoDom'];
-        row.indicadorPalco = diaSemanaIndex === DIAS_REUNIAO.meioSemana 
-          ? designacoesDoDia['indicadorPalcoQui'] 
-          : designacoesDoDia['indicadorPalcoDom'];
-      } else if (tipoTabela === 'Volantes') {
-        row.volante1 = diaSemanaIndex === DIAS_REUNIAO.meioSemana 
-          ? designacoesDoDia['volante1Qui'] 
-          : designacoesDoDia['volante1Dom'];
-        row.volante2 = diaSemanaIndex === DIAS_REUNIAO.meioSemana 
-          ? designacoesDoDia['volante2Qui'] 
-          : designacoesDoDia['volante2Dom'];
-      } else if (tipoTabela === 'AV') {
-        row.av = diaSemanaIndex === DIAS_REUNIAO.meioSemana 
-          ? designacoesDoDia['avQui'] 
-          : designacoesDoDia['avDom'];
-        row.indicadorZoom = diaSemanaIndex === DIAS_REUNIAO.meioSemana 
-          ? designacoesDoDia['indicadorZoomQui'] 
-          : designacoesDoDia['indicadorZoomDom'];
-      }
-
-      return row;
-    });
-
-    return { data, fullDateStrings };
-  };
-
-  const dadosIndicadores = prepararDadosTabela('Indicadores');
-  const dadosVolantes = prepararDadosTabela('Volantes');
-  const dadosAV = prepararDadosTabela('AV');
+  // Use a função externa que tem acesso aos dados corretos
+  const dadosIndicadores = prepararDadosTabela(designacoesFeitas, mes, ano, 'Indicadores');
+  const dadosVolantes = prepararDadosTabela(designacoesFeitas, mes, ano, 'Volantes');
+  const dadosAV = prepararDadosTabela(designacoesFeitas, mes, ano, 'AV');
 
   const hasAnyMeetingDates = dadosIndicadores.fullDateStrings.length > 0 || dadosVolantes.fullDateStrings.length > 0 || dadosAV.fullDateStrings.length > 0;
   const hasAnyDataForMonth = Object.values(designacoesFeitas).some(dayAssignments =>
@@ -264,32 +243,46 @@ export function ScheduleDisplay({
       return; // Do nothing if the schedule is finalized
     }
 
-    const dataObj = new Date(date + 'T00:00:00');
-    const diaSemanaIndex = dataObj.getUTCDay();
-    const isMeioSemana = diaSemanaIndex === DIAS_REUNIAO.meioSemana;
+    // Create date object using year, monthIndex, and day for local time interpretation
+    const [year, month, day] = date.split('-').map(Number);
+    // Month is 0-indexed in Date constructor, so subtract 1 from the month string.
+    const dateObj = new Date(year, month - 1, day);
+
+    // Use getDay() for local day of the week
+    const diaSemanaIndex = dateObj.getDay();
+
+    console.log("handleCellClick - Date:", date);
+    console.log("handleCellClick - columnKey:", columnKey);
+    console.log("handleCellClick - tableTitle:", tableTitle);
+    console.log("handleCellClick - diaSemanaIndex (getDay()):", diaSemanaIndex);
+    console.log("handleCellClick - DIAS_REUNIAO.meioSemana (inside function):", DIAS_REUNIAO.meioSemana);
+    const isMeioSemanaCheck = diaSemanaIndex === DIAS_REUNIAO.meioSemana;
+    console.log("handleCellClick - isMeioSemana (check result):", isMeioSemanaCheck);
+    console.log("handleCellClick - DIAS_REUNIAO.publica:", DIAS_REUNIAO.publica);
 
     let functionId: string;
+    // Directly map columnKey and local Day index to the correct functionId
     if (tableTitle === 'Indicadores') {
       if (columnKey === 'indicadorExterno') {
-        functionId = isMeioSemana ? 'indicadorExternoQui' : 'indicadorExternoDom';
+        functionId = diaSemanaIndex === DIAS_REUNIAO.meioSemana ? 'indicadorExternoQui' : 'indicadorExternoDom';
       } else if (columnKey === 'indicadorPalco') {
-        functionId = isMeioSemana ? 'indicadorPalcoQui' : 'indicadorPalcoDom';
+        functionId = diaSemanaIndex === DIAS_REUNIAO.meioSemana ? 'indicadorPalcoQui' : 'indicadorPalcoDom';
       } else {
         return;
       }
     } else if (tableTitle === 'Volantes') {
       if (columnKey === 'volante1') {
-        functionId = isMeioSemana ? 'volante1Qui' : 'volante1Dom';
+        functionId = diaSemanaIndex === DIAS_REUNIAO.meioSemana ? 'volante1Qui' : 'volante1Dom';
       } else if (columnKey === 'volante2') {
-        functionId = isMeioSemana ? 'volante2Qui' : 'volante2Dom';
+        functionId = diaSemanaIndex === DIAS_REUNIAO.meioSemana ? 'volante2Qui' : 'volante2Dom';
       } else {
         return;
       }
     } else if (tableTitle === 'AV') {
       if (columnKey === 'av') {
-        functionId = isMeioSemana ? 'avQui' : 'avDom';
+        functionId = diaSemanaIndex === DIAS_REUNIAO.meioSemana ? 'avQui' : 'avDom';
       } else if (columnKey === 'indicadorZoom') {
-        functionId = isMeioSemana ? 'indicadorZoomQui' : 'indicadorZoomDom';
+        functionId = diaSemanaIndex === DIAS_REUNIAO.meioSemana ? 'indicadorZoomQui' : 'indicadorZoomDom';
       } else {
         return;
       }
@@ -310,11 +303,11 @@ export function ScheduleDisplay({
 
   const meetingDatesForCleaning = useMemo(() => {
     const dates: Date[] = [];
-    const primeiroDiaDoMes = new Date(Date.UTC(ano, mes, 1));
-    const ultimoDiaDoMes = new Date(Date.UTC(ano, mes + 1, 0));
+    const primeiroDiaDoMes = new Date(ano, mes, 1);
+    const ultimoDiaDoMes = new Date(ano, mes + 1, 0);
 
-    for (let d = new Date(primeiroDiaDoMes); d <= ultimoDiaDoMes; d.setUTCDate(d.getUTCDate() + 1)) {
-      const diaSemana = d.getUTCDay();
+    for (let d = new Date(primeiroDiaDoMes); d <= ultimoDiaDoMes; d.setDate(d.getDate() + 1)) {
+      const diaSemana = d.getDay();
       if (diaSemana === DIAS_REUNIAO.meioSemana || diaSemana === DIAS_REUNIAO.publica) {
         dates.push(new Date(d));
       }
@@ -324,31 +317,31 @@ export function ScheduleDisplay({
 
   const weeksForCleaning = useMemo(() => {
     const weeks: { dateKey: string; weekLabel: string }[] = [];
-    const primeiroDiaDoMes = new Date(Date.UTC(ano, mes, 1));
-    const ultimoDiaDoMes = new Date(Date.UTC(ano, mes + 1, 0));
+    const primeiroDiaDoMes = new Date(ano, mes, 1);
+    const ultimoDiaDoMes = new Date(ano, mes + 1, 0);
 
     // Encontra a primeira segunda-feira do mês
     let primeiraSegunda = new Date(primeiroDiaDoMes);
-    while (primeiraSegunda.getUTCDay() !== 1) { // 1 = Segunda-feira
-      primeiraSegunda.setUTCDate(primeiraSegunda.getUTCDate() + 1);
+    while (primeiraSegunda.getDay() !== 1) {
+      primeiraSegunda.setDate(primeiraSegunda.getDate() + 1);
     }
 
     // Se a primeira segunda-feira for depois do dia 7, vamos para a segunda-feira anterior
-    if (primeiraSegunda.getUTCDate() > 7) {
-      primeiraSegunda.setUTCDate(primeiraSegunda.getUTCDate() - 7);
+    if (primeiraSegunda.getDate() > 7) {
+      primeiraSegunda.setDate(primeiraSegunda.getDate() - 7);
     }
 
     // Gera as semanas a partir da primeira segunda-feira
-    for (let d = new Date(primeiraSegunda); d <= ultimoDiaDoMes; d.setUTCDate(d.getUTCDate() + 7)) {
+    for (let d = new Date(primeiraSegunda); d <= ultimoDiaDoMes; d.setDate(d.getDate() + 7)) {
       const weekStart = new Date(d);
       const weekEnd = new Date(d);
-      weekEnd.setUTCDate(d.getUTCDate() + 6);
+      weekEnd.setDate(d.getDate() + 6);
 
-      // Only add the week if its start date (Monday) is in the current month
-      if (weekStart.getUTCMonth() === mes) {
+      // Only add the week if its start date (Monday) is in the current mês
+      if (weekStart.getMonth() === mes) {
         weeks.push({
           dateKey: formatarDataCompleta(weekStart),
-          weekLabel: `${weekStart.getUTCDate().toString().padStart(2, '0')}/${(weekStart.getUTCMonth() + 1).toString().padStart(2, '0')} - ${weekEnd.getUTCDate().toString().padStart(2, '0')}/${(weekEnd.getUTCMonth() + 1).toString().padStart(2, '0')}`
+          weekLabel: `${weekStart.getDate().toString().padStart(2, '0')}/${(weekStart.getMonth() + 1).toString().padStart(2, '0')} - ${weekEnd.getDate().toString().padStart(2, '0')}/${(weekEnd.getMonth() + 1).toString().padStart(2, '0')}`
         });
       }
     }
@@ -366,11 +359,7 @@ export function ScheduleDisplay({
           <ScheduleTable
             title="Indicadores"
             data={dadosIndicadores.data}
-            columns={[
-              { key: 'data', label: 'Data' },
-              { key: 'indicadorExterno', label: 'Indicador Externo' },
-              { key: 'indicadorPalco', label: 'Indicador Palco' },
-            ]}
+            columns={dadosIndicadores.columns}
             allMembers={membros}
             onCellClick={handleCellClick}
             currentFullDateStrings={dadosIndicadores.fullDateStrings}
@@ -380,11 +369,7 @@ export function ScheduleDisplay({
           <ScheduleTable
             title="Volantes"
             data={dadosVolantes.data}
-            columns={[
-              { key: 'data', label: 'Data' },
-              { key: 'volante1', label: 'Volante 1' },
-              { key: 'volante2', label: 'Volante 2' },
-            ]}
+            columns={dadosVolantes.columns}
             allMembers={membros}
             onCellClick={handleCellClick}
             currentFullDateStrings={dadosVolantes.fullDateStrings}
@@ -394,11 +379,7 @@ export function ScheduleDisplay({
           <ScheduleTable
             title="AV"
             data={dadosAV.data}
-            columns={[
-              { key: 'data', label: 'Data' },
-              { key: 'av', label: 'AV' },
-              { key: 'indicadorZoom', label: 'Indicador Zoom' },
-            ]}
+            columns={dadosAV.columns}
             allMembers={membros}
             onCellClick={handleCellClick}
             currentFullDateStrings={dadosAV.fullDateStrings}
@@ -420,8 +401,8 @@ export function ScheduleDisplay({
               <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
                 {meetingDatesForCleaning.map(dateObj => {
                   const dateStr = formatarDataCompleta(dateObj);
-                  const dia = dateObj.getUTCDate();
-                  const diaSemanaIndex = dateObj.getUTCDay();
+                  const dia = dateObj.getDate();
+                  const diaSemanaIndex = dateObj.getDay();
                   const diaAbrev = NOMES_DIAS_SEMANA_ABREV[diaSemanaIndex];
                   const badgeColorClass = diaSemanaIndex === DIAS_REUNIAO.meioSemana ? DIAS_SEMANA_REUNIAO_CORES.meioSemana : DIAS_SEMANA_REUNIAO_CORES.publica;
                   const currentGroupId = designacoesFeitas[dateStr]?.limpezaAposReuniaoGrupoId;
