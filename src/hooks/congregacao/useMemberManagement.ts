@@ -3,9 +3,11 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import type { Membro } from '@/lib/congregacao/types';
-import { 
-  carregarMembrosLocalmente, 
+import {
+  carregarMembrosLocalmente,
   salvarMembrosLocalmente,
+  carregarMembrosFirestore,
+  salvarMembrosFirestore,
   limparCacheDesignacoes,
   limparPublicMeetingAssignments,
   limparNVMCAssignments,
@@ -22,13 +24,23 @@ export function useMemberManagement() {
   const { toast } = useToast();
 
   useEffect(() => {
-    setMembros(carregarMembrosLocalmente());
+    carregarMembrosFirestore()
+      .then(setMembros)
+      .catch(err => {
+        console.error('Erro ao carregar membros do Firestore:', err);
+        setMembros(carregarMembrosLocalmente());
+      });
   }, []);
 
-  const persistMembros = useCallback((novosMembros: Membro[]) => {
+  const persistMembros = useCallback(async (novosMembros: Membro[]) => {
     const membrosOrdenados = novosMembros.sort((a, b) => a.nome.localeCompare(b.nome));
     setMembros(membrosOrdenados);
     salvarMembrosLocalmente(membrosOrdenados);
+    try {
+      await salvarMembrosFirestore(membrosOrdenados);
+    } catch (err) {
+      console.error('Erro ao salvar membros no Firestore:', err);
+    }
   }, []);
 
   const openNewMemberForm = () => {

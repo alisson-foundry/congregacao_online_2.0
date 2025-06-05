@@ -324,7 +324,7 @@ export function ScheduleGenerationCard({
           )}
           {!isLoading && !currentSchedule && !error && !status && (
              <p className="text-muted-foreground text-center py-4">
-              Nenhum cronograma carregado. Selecione o mês e ano e clique em "Gerar Cronograma" para iniciar.
+              Nenhum cronograma carregado. Selecione o mês e ano e clique em &quot;Gerar Cronograma&quot; para iniciar.
             </p>
           )}
         </div>

@@ -150,7 +150,7 @@ export interface ParsedNvmcProgram {
   canticoInicialNumero?: string;
   comentariosIniciaisDetalhes?: string;
   fmmParts: ParsedNvmcPart[];
-  vidaCristaParts: NVCVidaCristaDynamicPart[];
+  vidaCristaParts: ParsedNvmcPart[];
   vidaCristaCantico?: string;
   leituraBibliaTema?: string;
   ebcTema?: string;
