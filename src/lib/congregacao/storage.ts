@@ -1,9 +1,21 @@
 
 'use client';
 
-import type { Membro, DesignacoesFeitas, AllPublicMeetingAssignments, AllNVMCAssignments, AllFieldServiceAssignments, ManagedListItem, DesignacaoSalva, TodosCronogramasSalvos } from './types';
-import { 
-  LOCAL_STORAGE_KEY_MEMBROS, 
+import type {
+  Membro,
+  DesignacoesFeitas,
+  AllPublicMeetingAssignments,
+  PublicMeetingAssignment,
+  AllNVMCAssignments,
+  NVMCDailyAssignments,
+  AllFieldServiceAssignments,
+  FieldServiceMonthlyData,
+  ManagedListItem,
+  DesignacaoSalva,
+  TodosCronogramasSalvos,
+} from './types';
+import {
+  LOCAL_STORAGE_KEY_MEMBROS,
   LOCAL_STORAGE_KEY_SCHEDULE_CACHE,
   LOCAL_STORAGE_KEY_PUBLIC_MEETING_ASSIGNMENTS,
   LOCAL_STORAGE_KEY_NVMC_ASSIGNMENTS,
@@ -13,6 +25,8 @@ import {
   LOCAL_STORAGE_KEY_USER_SCHEDULE,
 } from './constants';
 import { validarEstruturaMembro } from './utils';
+import { collection, getDocs, setDoc, doc, deleteDoc } from 'firebase/firestore';
+import { db } from '../firebase';
 
 export function carregarMembrosLocalmente(): Membro[] {
   if (typeof window === 'undefined') return [];
@@ -36,6 +50,17 @@ export function salvarMembrosLocalmente(membros: Membro[]): void {
   } catch (error) {
     console.error("Erro ao salvar membros no localStorage:", error);
   }
+}
+
+export async function carregarMembrosFirestore(): Promise<Membro[]> {
+  const querySnapshot = await getDocs(collection(db, 'membros'));
+  const membros = querySnapshot.docs.map(d => validarEstruturaMembro(d.data(), false)).filter(Boolean) as Membro[];
+  return membros.sort((a, b) => a.nome.localeCompare(b.nome));
+}
+
+export async function salvarMembrosFirestore(membros: Membro[]): Promise<void> {
+  const col = collection(db, 'membros');
+  await Promise.all(membros.map(m => setDoc(doc(col, m.id), m)));
 }
 
 export function carregarCacheDesignacoes(): DesignacaoSalva | null {
@@ -136,6 +161,29 @@ export function limparTodosCronogramasSalvos(): void {
   }
 }
 
+export async function carregarTodosCronogramasFirestore(): Promise<TodosCronogramasSalvos | null> {
+  const querySnapshot = await getDocs(collection(db, 'schedules'));
+  if (querySnapshot.empty) return null;
+  const result: TodosCronogramasSalvos = {};
+  querySnapshot.docs.forEach(docSnap => {
+    result[docSnap.id] = docSnap.data() as DesignacaoSalva;
+  });
+  return result;
+}
+
+export async function salvarTodosCronogramasFirestore(data: TodosCronogramasSalvos): Promise<void> {
+  const col = collection(db, 'schedules');
+  await Promise.all(
+    Object.entries(data).map(([yearMonth, sched]) => setDoc(doc(col, yearMonth), sched))
+  );
+}
+
+export async function limparTodosCronogramasFirestore(): Promise<void> {
+  const col = collection(db, 'schedules');
+  const snapshot = await getDocs(col);
+  await Promise.all(snapshot.docs.map(d => deleteDoc(d.ref)));
+}
+
 
 // Funções para a aba "Reunião Pública"
 export function carregarPublicMeetingAssignments(): AllPublicMeetingAssignments | null {
@@ -174,6 +222,27 @@ export function limparPublicMeetingAssignments(): void {
   } catch (error) {
     console.error("Erro ao limpar designações da Reunião Pública:", error);
   }
+}
+
+export async function carregarPublicMeetingAssignmentsFirestore(): Promise<AllPublicMeetingAssignments | null> {
+  const querySnapshot = await getDocs(collection(db, 'public_meetings'));
+  if (querySnapshot.empty) return null;
+  const result: AllPublicMeetingAssignments = {};
+  querySnapshot.docs.forEach(docSnap => {
+    result[docSnap.id] = docSnap.data() as { [dateStr: string]: PublicMeetingAssignment };
+  });
+  return result;
+}
+
+export async function salvarPublicMeetingAssignmentsFirestore(data: AllPublicMeetingAssignments): Promise<void> {
+  const col = collection(db, 'public_meetings');
+  await Promise.all(Object.entries(data).map(([yearMonth, monthData]) => setDoc(doc(col, yearMonth), monthData)));
+}
+
+export async function limparPublicMeetingAssignmentsFirestore(): Promise<void> {
+  const col = collection(db, 'public_meetings');
+  const snapshot = await getDocs(col);
+  await Promise.all(snapshot.docs.map(d => deleteDoc(d.ref)));
 }
 
 // Funções para a aba "NVMC"
@@ -215,6 +284,29 @@ export function limparNVMCAssignments(): void {
   }
 }
 
+export async function carregarNVMCAssignmentsFirestore(): Promise<AllNVMCAssignments | null> {
+  const querySnapshot = await getDocs(collection(db, 'nvmc'));
+  if (querySnapshot.empty) return null;
+  const result: AllNVMCAssignments = {};
+  querySnapshot.docs.forEach(docSnap => {
+    result[docSnap.id] = docSnap.data() as { [dateStr: string]: NVMCDailyAssignments };
+  });
+  return result;
+}
+
+export async function salvarNVMCAssignmentsFirestore(data: AllNVMCAssignments): Promise<void> {
+  const col = collection(db, 'nvmc');
+  await Promise.all(
+    Object.entries(data).map(([yearMonth, monthData]) => setDoc(doc(col, yearMonth), monthData))
+  );
+}
+
+export async function limparNVMCAssignmentsFirestore(): Promise<void> {
+  const col = collection(db, 'nvmc');
+  const snapshot = await getDocs(col);
+  await Promise.all(snapshot.docs.map(d => deleteDoc(d.ref)));
+}
+
 // Funções para a aba "Serviço de Campo"
 export function carregarFieldServiceAssignments(): AllFieldServiceAssignments | null {
   if (typeof window === 'undefined') return null;
@@ -252,6 +344,29 @@ export function limparFieldServiceAssignments(): void {
   } catch (error) {
     console.error("Erro ao limpar designações do Serviço de Campo:", error);
   }
+}
+
+export async function carregarFieldServiceAssignmentsFirestore(): Promise<AllFieldServiceAssignments | null> {
+  const querySnapshot = await getDocs(collection(db, 'field_service'));
+  if (querySnapshot.empty) return null;
+  const result: AllFieldServiceAssignments = {};
+  querySnapshot.docs.forEach(docSnap => {
+    result[docSnap.id] = docSnap.data() as FieldServiceMonthlyData;
+  });
+  return result;
+}
+
+export async function salvarFieldServiceAssignmentsFirestore(data: AllFieldServiceAssignments): Promise<void> {
+  const col = collection(db, 'field_service');
+  await Promise.all(
+    Object.entries(data).map(([yearMonth, monthData]) => setDoc(doc(col, yearMonth), monthData))
+  );
+}
+
+export async function limparFieldServiceAssignmentsFirestore(): Promise<void> {
+  const col = collection(db, 'field_service');
+  const snapshot = await getDocs(col);
+  await Promise.all(snapshot.docs.map(d => deleteDoc(d.ref)));
 }
 
 // Funções para listas gerenciadas do Serviço de Campo (Modalidades e Locais Base)

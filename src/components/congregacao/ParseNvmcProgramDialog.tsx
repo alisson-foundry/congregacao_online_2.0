@@ -60,7 +60,7 @@ export function ParseNvmcProgramDialog({
           </DialogTitle>
           <DialogDescription>
             Cole o texto completo do programa da reunião de meio de semana (NVMC) abaixo. 
-            O sistema tentará extrair os títulos das partes. Os campos "Sua resposta" serão ignorados.
+            O sistema tentará extrair os títulos das partes. Os campos &quot;Sua resposta&quot; serão ignorados.
           </DialogDescription>
         </DialogHeader>
         <div className="py-4 space-y-2">

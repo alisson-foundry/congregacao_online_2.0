@@ -9,6 +9,8 @@ import {
   salvarTodosCronogramas,
   carregarTodosCronogramas,
   salvarDesignacoesUsuario,
+  carregarTodosCronogramasFirestore,
+  salvarTodosCronogramasFirestore
 } from '@/lib/congregacao/storage';
 import { calcularDesignacoesAction } from '@/lib/congregacao/assignment-logic';
 
@@ -182,6 +184,9 @@ export function useScheduleManagement({ membros, updateMemberHistory }: UseSched
     if (todosOsCronogramas[yearMonthKey]) {
       delete todosOsCronogramas[yearMonthKey];
       salvarTodosCronogramas(todosOsCronogramas);
+      salvarTodosCronogramasFirestore(todosOsCronogramas).catch(err =>
+        console.error('Erro ao atualizar cronogramas no Firestore ao limpar mês:', err)
+      );
       console.log(`Schedule for ${yearMonthKey} cleared successfully.`);
 
       // Se o mês e ano limpado for o que está atualmente no estado/cache, também limpamos o estado/cache
@@ -205,10 +210,16 @@ export function useScheduleManagement({ membros, updateMemberHistory }: UseSched
         schedule: scheduleState.designacoes,
         mes: scheduleState.mes,
         ano: scheduleState.ano,
-        status: 'rascunho', 
+        status: 'rascunho',
       });
       // Atualiza também o estado local e o cache para refletir o status 'rascunho'
       persistScheduleToStateAndCache(scheduleState.designacoes, scheduleState.mes, scheduleState.ano, 'rascunho');
+      const todos = carregarTodosCronogramas();
+      if (todos) {
+        salvarTodosCronogramasFirestore(todos).catch(err =>
+          console.error('Erro ao salvar cronogramas no Firestore:', err)
+        );
+      }
       return { success: true };
     } else {
       return { success: false, error: "Nenhuma designação gerada para salvar." };
@@ -242,6 +253,9 @@ export function useScheduleManagement({ membros, updateMemberHistory }: UseSched
         status: 'finalizado',
     };
     salvarTodosCronogramas(todosOsCronogramas);
+    salvarTodosCronogramasFirestore(todosOsCronogramas).catch(err =>
+      console.error('Erro ao salvar cronogramas finalizados no Firestore:', err)
+    );
     
     // O cache deve refletir o estado finalizado
     persistScheduleToStateAndCache(scheduleState.designacoes, scheduleState.mes, scheduleState.ano, 'finalizado');
@@ -250,18 +264,31 @@ export function useScheduleManagement({ membros, updateMemberHistory }: UseSched
     return { success: true };
   }, [scheduleState, persistScheduleToStateAndCache]);
 
-  const carregarDesignacoes = useCallback((mes: number, ano: number) => {
+  const carregarDesignacoes = useCallback(async (mes: number, ano: number) => {
     console.log('Carregando designações para', { mes, ano });
-    const todosCronogramas = carregarTodosCronogramas();
-    const yearMonthKey = `${ano}-${String(mes + 1).padStart(2, '0')}`;
-    const saved = todosCronogramas ? todosCronogramas[yearMonthKey] : null;
+    try {
+      const firestoreData = await carregarTodosCronogramasFirestore();
+      const allSchedules = firestoreData || carregarTodosCronogramas();
+      const yearMonthKey = `${ano}-${String(mes + 1).padStart(2, '0')}`;
+      const saved = allSchedules ? allSchedules[yearMonthKey] : null;
 
-    console.log('Dados salvos encontrados no cache para', yearMonthKey, ':', saved);
+      console.log('Dados salvos encontrados no cache/Firestore para', yearMonthKey, ':', saved);
 
-    if (saved) {
-      persistScheduleToStateAndCache(saved.schedule, saved.mes, saved.ano, saved.status);
-    } else {
-      persistScheduleToStateAndCache(null, mes, ano, null); // Limpa se não encontrado, mas mantém mês/ano selecionados
+      if (saved) {
+        persistScheduleToStateAndCache(saved.schedule, saved.mes, saved.ano, saved.status);
+      } else {
+        persistScheduleToStateAndCache(null, mes, ano, null);
+      }
+    } catch (err) {
+      console.error('Erro ao carregar cronogramas do Firestore:', err);
+      const allSchedules = carregarTodosCronogramas();
+      const yearMonthKey = `${ano}-${String(mes + 1).padStart(2, '0')}`;
+      const saved = allSchedules ? allSchedules[yearMonthKey] : null;
+      if (saved) {
+        persistScheduleToStateAndCache(saved.schedule, saved.mes, saved.ano, saved.status);
+      } else {
+        persistScheduleToStateAndCache(null, mes, ano, null);
+      }
     }
   }, [persistScheduleToStateAndCache]);
 

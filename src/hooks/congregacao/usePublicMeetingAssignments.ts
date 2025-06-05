@@ -7,6 +7,9 @@ import {
   carregarPublicMeetingAssignments as carregarStorage,
   salvarPublicMeetingAssignments as salvarStorage,
   limparPublicMeetingAssignments as limparStorage,
+  carregarPublicMeetingAssignmentsFirestore,
+  salvarPublicMeetingAssignmentsFirestore,
+  limparPublicMeetingAssignmentsFirestore,
 } from '@/lib/congregacao/storage';
 import { formatarDataParaChave } from '@/lib/congregacao/utils';
 import { useToast } from "@/hooks/use-toast";
@@ -16,7 +19,15 @@ export function usePublicMeetingAssignments() {
   const { toast } = useToast();
 
   useEffect(() => {
-    setAllAssignments(carregarStorage());
+    carregarPublicMeetingAssignmentsFirestore()
+      .then(data => {
+        if (data) setAllAssignments(data);
+        else setAllAssignments(carregarStorage());
+      })
+      .catch(err => {
+        console.error('Erro ao carregar designações da Reunião Pública do Firestore:', err);
+        setAllAssignments(carregarStorage());
+      });
   }, []);
 
   const saveAssignments = useCallback((
@@ -52,12 +63,18 @@ export function usePublicMeetingAssignments() {
 
     setAllAssignments(updatedAllAssignmentsData);
     salvarStorage(updatedAllAssignmentsData);
+    salvarPublicMeetingAssignmentsFirestore(updatedAllAssignmentsData).catch(err =>
+      console.error('Erro ao salvar designações da Reunião Pública no Firestore:', err)
+    );
     toast({ title: "Sucesso", description: "Designações da Reunião Pública salvas." });
   }, [allAssignments, toast]);
 
   const clearAssignments = useCallback(() => {
     setAllAssignments(null);
     limparStorage();
+    limparPublicMeetingAssignmentsFirestore().catch(err =>
+      console.error('Erro ao limpar designações da Reunião Pública no Firestore:', err)
+    );
     // O toast será disparado pelo page.tsx para manter consistência com outros clear actions
   }, []);
 

@@ -175,14 +175,15 @@ export function PublicMeetingAssignmentsCard({
      const leitor = allMembers.find(m => m.id === leitorId);
      const leitorNome = leitor ? leitor.nome : "Ninguém Designado";
      const funcaoLeitorDom = FUNCOES_DESIGNADAS.find(f => f.id === 'leitorDom');
-     const grupoFuncao = funcaoLeitorDom?.grupo || "Leitura/Presidência";
+     const grupoFuncao = funcaoLeitorDom?.tabela || "LeitorPresidente";
 
      onOpenSubstitutionModal({
          date: dateStr,
          functionId: 'leitorDom',
          originalMemberId: leitorId || '',
          originalMemberName: leitorNome,
-         currentFunctionGroupId: grupoFuncao
+         currentFunctionGroupId: grupoFuncao,
+         tableTitle: grupoFuncao
      });
   };
 
@@ -194,7 +195,7 @@ export function PublicMeetingAssignmentsCard({
         </CardTitle>
         <CardDescription>
           Configure os temas, oradores e participantes para as reuniões públicas de {obterNomeMes(displayMonth)} de {displayYear}.
-          O Leitor de A Sentinela é designado automaticamente; use "Designar/Alterar" se necessário.
+          O Leitor de A Sentinela é designado automaticamente; use &quot;Designar/Alterar&quot; se necessário.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">

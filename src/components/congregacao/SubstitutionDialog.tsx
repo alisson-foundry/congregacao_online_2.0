@@ -71,7 +71,7 @@ export function SubstitutionDialog({
     if (initialFunctionId.endsWith('Qui') || initialFunctionId.endsWith('Dom')) {
       return initialFunctionId;
     }
-    return getRealFunctionId(initialFunctionId, date, currentFunctionGroupId);
+    return getRealFunctionId(initialFunctionId, date);
   }, [date, initialFunctionId, currentFunctionGroupId]);
 
   const targetFunction = useMemo(() => {

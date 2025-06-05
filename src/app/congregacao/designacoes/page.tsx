@@ -17,7 +17,11 @@ import {
   limparNVMCAssignments as limparStorageNVMCAssignments,
   carregarFieldServiceAssignments,
   salvarFieldServiceAssignments,
-  limparFieldServiceAssignments as limparStorageFieldServiceAssignments
+  limparFieldServiceAssignments as limparStorageFieldServiceAssignments,
+  carregarNVMCAssignmentsFirestore,
+  salvarNVMCAssignmentsFirestore,
+  carregarFieldServiceAssignmentsFirestore,
+  salvarFieldServiceAssignmentsFirestore
 } from '@/lib/congregacao/storage';
 import { formatarDataParaChave, getRealFunctionId } from '@/lib/congregacao/utils';
 import { useToast } from "@/hooks/use-toast";
@@ -54,8 +58,25 @@ export default function DesignacoesPage() {
   const { toast } = useToast();
 
   useEffect(() => {
-    setAllNvmcAssignmentsData(carregarNVMCAssignments());
-    setAllFieldServiceAssignmentsData(carregarFieldServiceAssignments());
+    carregarNVMCAssignmentsFirestore()
+      .then(data => {
+        if (data) setAllNvmcAssignmentsData(data);
+        else setAllNvmcAssignmentsData(carregarNVMCAssignments());
+      })
+      .catch(err => {
+        console.error('Erro ao carregar designações NVMC do Firestore:', err);
+        setAllNvmcAssignmentsData(carregarNVMCAssignments());
+      });
+
+    carregarFieldServiceAssignmentsFirestore()
+      .then(data => {
+        if (data) setAllFieldServiceAssignmentsData(data);
+        else setAllFieldServiceAssignmentsData(carregarFieldServiceAssignments());
+      })
+      .catch(err => {
+        console.error('Erro ao carregar designações do Serviço de Campo do Firestore:', err);
+        setAllFieldServiceAssignmentsData(carregarFieldServiceAssignments());
+      });
   }, []);
 
   const handleScheduleGeneratedCallback = async (mes: number, ano: number) => {
@@ -80,6 +101,9 @@ export default function DesignacoesPage() {
     };
     setAllNvmcAssignmentsData(updatedAllAssignments);
     salvarNVMCAssignments(updatedAllAssignments);
+    salvarNVMCAssignmentsFirestore(updatedAllAssignments).catch(err =>
+      console.error('Erro ao salvar designações NVMC no Firestore:', err)
+    );
     toast({ title: "Sucesso", description: "Designações NVMC salvas." });
   };
 
@@ -95,6 +119,9 @@ export default function DesignacoesPage() {
     };
     setAllFieldServiceAssignmentsData(updatedAllAssignments);
     salvarFieldServiceAssignments(updatedAllAssignments);
+    salvarFieldServiceAssignmentsFirestore(updatedAllAssignments).catch(err =>
+      console.error('Erro ao salvar designações do Serviço de Campo no Firestore:', err)
+    );
     toast({ title: "Sucesso", description: "Designações do Serviço de Campo salvas." });
   };
 
