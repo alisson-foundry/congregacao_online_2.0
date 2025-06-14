@@ -99,47 +99,62 @@ export default function Home() {
 
   const totalMembers = membros.length;
 
-  const getUpcomingAssignments = (schedule: DesignacoesFeitas | null, mes: number | null, ano: number | null) => {
+  const getUpcomingAssignments = (
+    schedule: DesignacoesFeitas | null,
+    mes: number | null,
+    ano: number | null,
+    membrosList: Membro[],
+  ) => {
     if (!schedule || mes === null || ano === null) {
-      return [];
+      return [] as string[];
     }
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const upcoming = Object.entries(schedule)
-    .flatMap(([dateStr, assignments]) => {
-      return Object.entries(assignments)
-        .filter(([funcaoId, membroId]) => membroId !== null && funcaoId !== 'limpezaAposReuniaoGrupoId' && funcaoId !== 'limpezaSemanalResponsavel')
-        .map(([funcaoId, membroId]) => ({ data: dateStr, funcaoId, membroId: membroId! }));
-    })
-    .filter(assignment => {
-      const assignmentDate = parseDateKey(assignment.data);
-      return assignmentDate && 
-             (assignmentDate.getFullYear() > today.getFullYear() ||
-              (assignmentDate.getFullYear() === today.getFullYear() && assignmentDate.getMonth() > today.getMonth()) ||
-              (assignmentDate.getFullYear() === today.getFullYear() && assignmentDate.getMonth() === today.getMonth() && assignmentDate.getDate() >= today.getDate()));
-    })
-    .sort((a, b) => {
-      const dateA = parseDateKey(a.data);
-      const dateB = parseDateKey(b.data);
-      if (dateA && dateB) {
-          return dateA.getTime() - dateB.getTime();
-      }
-      return 0;
-    })
-    .slice(0, 5);
+    const upcoming: { data: string; funcaoId: string; membroId: string }[] = [];
 
-    return upcoming.map(assignment => {
-        const membro = membros.find(m => m.id === assignment.membroId);
-        const nomeMembro = membro ? `${membro.nome.split(' ')[0]} ${membro.nome.split(' ')[1]?.charAt(0) || ''}.` : 'Membro Desconhecido';
-        const tipoDesignacao = TIPOS_DESIGNACAO[assignment.funcaoId] || assignment.funcaoId;
-        const dataFormatada = formatarDataCompleta(parseDateKey(assignment.data)!);
-        return `${nomeMembro} - ${tipoDesignacao} (${dataFormatada})`;
+    for (const [dateStr, assignments] of Object.entries(schedule)) {
+      const assignmentDate = parseDateKey(dateStr);
+      if (
+        !assignmentDate ||
+        assignmentDate < today
+      ) {
+        continue;
+      }
+
+      for (const [funcaoId, membroId] of Object.entries(assignments)) {
+        if (
+          membroId &&
+          funcaoId !== 'limpezaAposReuniaoGrupoId' &&
+          funcaoId !== 'limpezaSemanalResponsavel'
+        ) {
+          upcoming.push({ data: dateStr, funcaoId, membroId: membroId as string });
+        }
+      }
+    }
+
+    upcoming.sort((a, b) => {
+      const dateA = parseDateKey(a.data)!;
+      const dateB = parseDateKey(b.data)!;
+      return dateA.getTime() - dateB.getTime();
+    });
+
+    return upcoming.slice(0, 5).map((assignment) => {
+      const membro = membrosList.find((m) => m.id === assignment.membroId);
+      const nomeMembro = membro
+        ? `${membro.nome.split(' ')[0]} ${membro.nome.split(' ')[1]?.charAt(0) || ''}.`
+        : 'Membro Desconhecido';
+      const tipoDesignacao = TIPOS_DESIGNACAO[assignment.funcaoId] || assignment.funcaoId;
+      const dataFormatada = formatarDataCompleta(parseDateKey(assignment.data)!);
+      return `${nomeMembro} - ${tipoDesignacao} (${dataFormatada})`;
     });
   };
 
-  const upcomingAssignments = getUpcomingAssignments(scheduleData, scheduleMes, scheduleAno);
+  const upcomingAssignments = React.useMemo(
+    () => getUpcomingAssignments(scheduleData, scheduleMes, scheduleAno, membros),
+    [scheduleData, scheduleMes, scheduleAno, membros]
+  );
 
   const currentYearMonthKey = scheduleMes !== null && scheduleAno !== null ? formatarDataParaChave(new Date(scheduleAno, scheduleMes, 1)) : null;
   
