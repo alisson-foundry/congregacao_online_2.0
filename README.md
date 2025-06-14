@@ -34,6 +34,7 @@ To get started, take a look at src/app/page.tsx.
 
 ## Novidade
 
+
 Há também uma nova página **Horários Padrão** em `/congregacao/horarios-padrao`, que permite configurar a grade semanal de saídas permanentes.
 
 Na tela de designações existe o botão **Gerir Saídas**. Com ele é possível cadastrar
@@ -43,3 +44,4 @@ são carregadas automaticamente, bastando designar os dirigentes.
 
 Os horários disponíveis agora aparecem em intervalos de 15 minutos e todas as datas
 usam o horário local para evitar desvios causados pelo UTC.
+

@@ -14,6 +14,7 @@ import { Separator } from '@/components/ui/separator';
 import { ClipboardList, PlusCircle, Trash2, Settings2 } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { ManageFieldServiceDialog } from './ManageFieldServiceDialog';
+
 import {
   carregarModalidades,
   carregarLocaisBase,
@@ -21,6 +22,13 @@ import {
   carregarFieldServiceTemplateFirestore,
 } from '@/lib/congregacao/storage';
 
+
+import {
+  carregarModalidades,
+  carregarLocaisBase,
+  carregarFieldServiceTemplate,
+  carregarFieldServiceTemplateFirestore,
+} from '@/lib/congregacao/storage';
 
 interface FieldServiceAssignmentsCardProps {
   allFieldServiceAssignments: AllFieldServiceAssignments | null;
@@ -88,6 +96,8 @@ export function FieldServiceAssignmentsCard({
   );
 
   useEffect(() => {
+
+
     async function init() {
       const yearMonthKey = formatarDataParaChave(new Date(displayYear, displayMonth, 1));
       const loadedMonthData = allFieldServiceAssignments?.[yearMonthKey] || {};
@@ -129,6 +139,7 @@ export function FieldServiceAssignmentsCard({
         };
       }
       setCurrentMonthData(initializedMonthData);
+
     }
     init();
   }, [displayMonth, displayYear, allFieldServiceAssignments, generateMeetingDatesForSlot, modalidadesList, locaisBaseList]);

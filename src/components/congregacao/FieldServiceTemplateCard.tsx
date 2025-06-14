@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { PlusCircle, Trash2, ClipboardList } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
+
 import {
   carregarModalidades,
   carregarLocaisBase,
@@ -34,6 +35,7 @@ export function FieldServiceTemplateCard() {
 
   useEffect(() => { loadManagedLists(); }, [loadManagedLists]);
 
+
 useEffect(() => {
   async function loadTemplate() {
     const fromDb = await carregarFieldServiceTemplateFirestore();
@@ -47,6 +49,7 @@ useEffect(() => {
   }
   loadTemplate();
 }, []);
+
 
   const handleAddSlot = (dayOfWeek: number) => {
     const dayKey = dayOfWeek.toString();
@@ -88,6 +91,7 @@ useEffect(() => {
     }));
   };
 
+
 const handleSaveTemplate = () => {
   salvarFieldServiceTemplate(templateData);
   salvarFieldServiceTemplateFirestore(templateData)
@@ -98,6 +102,7 @@ const handleSaveTemplate = () => {
       toast({ title: 'Erro', description: 'Falha ao salvar no banco de dados.', variant: 'destructive' });
     });
 };
+
 
   return (
     <Card>
