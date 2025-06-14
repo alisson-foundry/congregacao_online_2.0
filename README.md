@@ -26,8 +26,14 @@ To get started, take a look at src/app/page.tsx.
 
 4. Launch the development server:
 
-   ```bash
-   npm run dev
-   ```
+  ```bash
+  npm run dev
+  ```
 
-   The app will be available at [http://localhost:9002](http://localhost:9002/).
+  The app will be available at [http://localhost:9002](http://localhost:9002/).
+
+## Novidade
+
+Agora existe a página `/congregacao/horarios-padrao` onde é possível configurar
+uma grade semanal de pontos de encontro do serviço de campo. Esse template é
+usado ao criar as designações mensais.

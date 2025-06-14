@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import type { AllFieldServiceAssignments, FieldServiceMeetingSlot, FieldServiceMonthlyData, ManagedListItem } from '@/lib/congregacao/types';
+import type { AllFieldServiceAssignments, FieldServiceMeetingSlot, FieldServiceMonthlyData, ManagedListItem, FieldServiceWeeklyTemplate } from '@/lib/congregacao/types';
 import { NOMES_MESES, NOMES_DIAS_SEMANA_COMPLETOS, FIELD_SERVICE_TIME_OPTIONS } from '@/lib/congregacao/constants';
 import { formatarDataParaChave, formatarDataCompleta } from '@/lib/congregacao/utils';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,7 +14,7 @@ import { Separator } from '@/components/ui/separator';
 import { ClipboardList, PlusCircle, Trash2, Settings2 } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { ManageFieldServiceListsDialog } from './ManageFieldServiceListsDialog';
-import { carregarModalidades, carregarLocaisBase } from '@/lib/congregacao/storage';
+import { carregarModalidades, carregarLocaisBase, carregarFieldServiceTemplate } from '@/lib/congregacao/storage';
 
 
 interface FieldServiceAssignmentsCardProps {
@@ -79,30 +79,38 @@ export function FieldServiceAssignmentsCard({
   useEffect(() => {
     const yearMonthKey = formatarDataParaChave(new Date(displayYear, displayMonth, 1));
     const loadedMonthData = allFieldServiceAssignments?.[yearMonthKey] || {};
-    
-    const initializedMonthData: FieldServiceMonthlyData = {};
-    for (let i = 0; i < 7; i++) { // 0 (Sun) to 6 (Sat)
-        const dayOfWeekStr = i.toString();
-        const existingDaySlots = loadedMonthData[dayOfWeekStr]?.slots || [];
-        
-        initializedMonthData[dayOfWeekStr] = {
-            slots: existingDaySlots.map(slot => {
-                const validModalityId = modalidadesList.some(m => m.id === slot.modalityId) ? slot.modalityId : null;
-                const validBaseLocationId = locaisBaseList.some(l => l.id === slot.baseLocationId) ? slot.baseLocationId : null;
+    const templateData: FieldServiceWeeklyTemplate = carregarFieldServiceTemplate() || {};
 
-                return {
-                    ...slot,
-                    id: slot.id || generateSlotId(),
-                    time: slot.time || (FIELD_SERVICE_TIME_OPTIONS.length > 0 ? FIELD_SERVICE_TIME_OPTIONS[0].value : '00:00'), 
-                    modalityId: validModalityId,
-                    baseLocationId: validBaseLocationId,
-                    additionalDetails: slot.additionalDetails || '',
-                    assignedDates: slot.assignedDates && slot.assignedDates.length > 0 
-                                    ? slot.assignedDates 
-                                    : generateMeetingDatesForSlot(i, displayYear, displayMonth)
-                };
-            })
-        };
+    const initializedMonthData: FieldServiceMonthlyData = {};
+    for (let i = 0; i < 7; i++) {
+      const dayOfWeekStr = i.toString();
+      let sourceSlots = loadedMonthData[dayOfWeekStr]?.slots || [];
+
+      if (sourceSlots.length === 0 && templateData[dayOfWeekStr]?.slots) {
+        sourceSlots = templateData[dayOfWeekStr].slots.map(tslot => ({
+          ...tslot,
+          assignedDates: generateMeetingDatesForSlot(i, displayYear, displayMonth),
+        }));
+      }
+
+      initializedMonthData[dayOfWeekStr] = {
+        slots: sourceSlots.map(slot => {
+          const validModalityId = modalidadesList.some(m => m.id === slot.modalityId) ? slot.modalityId : null;
+          const validBaseLocationId = locaisBaseList.some(l => l.id === slot.baseLocationId) ? slot.baseLocationId : null;
+
+          return {
+            ...slot,
+            id: slot.id || generateSlotId(),
+            time: slot.time || (FIELD_SERVICE_TIME_OPTIONS.length > 0 ? FIELD_SERVICE_TIME_OPTIONS[0].value : '00:00'),
+            modalityId: validModalityId,
+            baseLocationId: validBaseLocationId,
+            additionalDetails: slot.additionalDetails || '',
+            assignedDates: slot.assignedDates && slot.assignedDates.length > 0
+              ? slot.assignedDates
+              : generateMeetingDatesForSlot(i, displayYear, displayMonth),
+          };
+        }),
+      };
     }
     setCurrentMonthData(initializedMonthData);
   }, [displayMonth, displayYear, allFieldServiceAssignments, generateMeetingDatesForSlot, modalidadesList, locaisBaseList]);
