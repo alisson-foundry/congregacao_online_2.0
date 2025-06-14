@@ -193,3 +193,19 @@ export interface AllFieldServiceAssignments {
   // Chave: "AAAA-MM" (ex: "2024-07")
   [yearMonth: string]: FieldServiceMonthlyData;
 }
+
+// --- Template Semanal para Serviço de Campo ---
+export interface FieldServiceTemplateSlot {
+  id: string;
+  time: string;
+  modalityId?: string | null;
+  baseLocationId?: string | null;
+  additionalDetails?: string;
+}
+
+export interface FieldServiceWeeklyTemplate {
+  // Chave: Dia da semana (0-6, onde 0 é Domingo) como string
+  [dayOfWeek: string]: {
+    slots: FieldServiceTemplateSlot[];
+  };
+}
