@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import type { AllFieldServiceAssignments, FieldServiceMeetingSlot, FieldServiceMonthlyData, ManagedListItem } from '@/lib/congregacao/types';
+import type { AllFieldServiceAssignments, FieldServiceMeetingSlot, FieldServiceMonthlyData, ManagedListItem, FieldServiceWeeklyTemplate } from '@/lib/congregacao/types';
 import { NOMES_MESES, NOMES_DIAS_SEMANA_COMPLETOS, FIELD_SERVICE_TIME_OPTIONS } from '@/lib/congregacao/constants';
 import { formatarDataParaChave, formatarDataCompleta } from '@/lib/congregacao/utils';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,8 +13,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Separator } from '@/components/ui/separator';
 import { ClipboardList, PlusCircle, Trash2, Settings2 } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
-import { ManageFieldServiceListsDialog } from './ManageFieldServiceListsDialog';
-import { carregarModalidades, carregarLocaisBase } from '@/lib/congregacao/storage';
+import { ManageFieldServiceDialog } from './ManageFieldServiceDialog';
+import { carregarModalidades, carregarLocaisBase, carregarFieldServiceTemplate } from '@/lib/congregacao/storage';
 
 
 interface FieldServiceAssignmentsCardProps {
@@ -46,7 +46,10 @@ export function FieldServiceAssignmentsCard({
   const [locaisBaseList, setLocaisBaseList] = useState<ManagedListItem[]>([]);
 
   const currentYearValue = new Date().getFullYear();
-  const yearsForSelect = Array.from({ length: 5 }, (_, i) => currentYearValue - 2 + i);
+  const yearsForSelect = useMemo(
+    () => Array.from({ length: 5 }, (_, i) => currentYearValue - 2 + i),
+    [currentYearValue]
+  );
 
   const loadManagedLists = useCallback(() => {
     setModalidadesList(carregarModalidades());
@@ -58,51 +61,62 @@ export function FieldServiceAssignmentsCard({
   }, [loadManagedLists]);
 
 
-  const generateMeetingDatesForSlot = useCallback((dayOfWeek: number, year: number, month: number) => {
-    const dates = [];
-    const firstDay = new Date(Date.UTC(year, month, 1));
-    const lastDayNum = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
+  const generateMeetingDatesForSlot = useCallback(
+    (dayOfWeek: number, year: number, month: number) => {
+      const dates = [];
+      const firstDay = new Date(year, month, 1);
+      const lastDayNum = new Date(year, month + 1, 0).getDate();
 
-    for (let dayNum = 1; dayNum <= lastDayNum; dayNum++) {
-      const currentDate = new Date(Date.UTC(year, month, dayNum));
-      if (currentDate.getUTCDay() === dayOfWeek) {
-        dates.push({
-          specificDateKey: formatarDataCompleta(currentDate),
-          leaderName: '',
-          specialNote: '',
-        });
+      for (let dayNum = 1; dayNum <= lastDayNum; dayNum++) {
+        const currentDate = new Date(year, month, dayNum);
+        if (currentDate.getDay() === dayOfWeek) {
+          dates.push({
+            specificDateKey: formatarDataCompleta(currentDate),
+            leaderName: '',
+            specialNote: '',
+          });
+        }
       }
-    }
-    return dates;
-  }, []);
+      return dates;
+    },
+    []
+  );
 
   useEffect(() => {
     const yearMonthKey = formatarDataParaChave(new Date(displayYear, displayMonth, 1));
     const loadedMonthData = allFieldServiceAssignments?.[yearMonthKey] || {};
-    
-    const initializedMonthData: FieldServiceMonthlyData = {};
-    for (let i = 0; i < 7; i++) { // 0 (Sun) to 6 (Sat)
-        const dayOfWeekStr = i.toString();
-        const existingDaySlots = loadedMonthData[dayOfWeekStr]?.slots || [];
-        
-        initializedMonthData[dayOfWeekStr] = {
-            slots: existingDaySlots.map(slot => {
-                const validModalityId = modalidadesList.some(m => m.id === slot.modalityId) ? slot.modalityId : null;
-                const validBaseLocationId = locaisBaseList.some(l => l.id === slot.baseLocationId) ? slot.baseLocationId : null;
+    const templateData: FieldServiceWeeklyTemplate = carregarFieldServiceTemplate() || {};
 
-                return {
-                    ...slot,
-                    id: slot.id || generateSlotId(),
-                    time: slot.time || (FIELD_SERVICE_TIME_OPTIONS.length > 0 ? FIELD_SERVICE_TIME_OPTIONS[0].value : '00:00'), 
-                    modalityId: validModalityId,
-                    baseLocationId: validBaseLocationId,
-                    additionalDetails: slot.additionalDetails || '',
-                    assignedDates: slot.assignedDates && slot.assignedDates.length > 0 
-                                    ? slot.assignedDates 
-                                    : generateMeetingDatesForSlot(i, displayYear, displayMonth)
-                };
-            })
-        };
+    const initializedMonthData: FieldServiceMonthlyData = {};
+    for (let i = 0; i < 7; i++) {
+      const dayOfWeekStr = i.toString();
+      let sourceSlots = loadedMonthData[dayOfWeekStr]?.slots || [];
+
+      if (sourceSlots.length === 0 && templateData[dayOfWeekStr]?.slots) {
+        sourceSlots = templateData[dayOfWeekStr].slots.map(tslot => ({
+          ...tslot,
+          assignedDates: generateMeetingDatesForSlot(i, displayYear, displayMonth),
+        }));
+      }
+
+      initializedMonthData[dayOfWeekStr] = {
+        slots: sourceSlots.map(slot => {
+          const validModalityId = modalidadesList.some(m => m.id === slot.modalityId) ? slot.modalityId : null;
+          const validBaseLocationId = locaisBaseList.some(l => l.id === slot.baseLocationId) ? slot.baseLocationId : null;
+
+          return {
+            ...slot,
+            id: slot.id || generateSlotId(),
+            time: slot.time || (FIELD_SERVICE_TIME_OPTIONS.length > 0 ? FIELD_SERVICE_TIME_OPTIONS[0].value : '00:00'),
+            modalityId: validModalityId,
+            baseLocationId: validBaseLocationId,
+            additionalDetails: slot.additionalDetails || '',
+            assignedDates: slot.assignedDates && slot.assignedDates.length > 0
+              ? slot.assignedDates
+              : generateMeetingDatesForSlot(i, displayYear, displayMonth),
+          };
+        }),
+      };
     }
     setCurrentMonthData(initializedMonthData);
   }, [displayMonth, displayYear, allFieldServiceAssignments, generateMeetingDatesForSlot, modalidadesList, locaisBaseList]);
@@ -225,12 +239,12 @@ export function FieldServiceAssignmentsCard({
           <Button onClick={handleSaveChanges} className="w-full sm:w-auto whitespace-nowrap">
             Salvar Designações de Campo
           </Button>
-           <Button 
-            variant="outline" 
-            onClick={() => setIsManageListsDialogOpen(true)} 
+          <Button
+            variant="outline"
+            onClick={() => setIsManageListsDialogOpen(true)}
             className="w-full sm:w-auto whitespace-nowrap"
           >
-            <Settings2 className="mr-2 h-4 w-4" /> Gerenciar Listas
+            <Settings2 className="mr-2 h-4 w-4" /> Gerir Saídas
           </Button>
         </div>
 
@@ -321,7 +335,7 @@ export function FieldServiceAssignmentsCard({
                   <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
                     {slot.assignedDates.map((dateEntry) => {
                       const dateObj = new Date(dateEntry.specificDateKey + 'T00:00:00');
-                      const formattedDate = `${dateObj.getUTCDate().toString().padStart(2, '0')}/${(dateObj.getUTCMonth() + 1).toString().padStart(2, '0')}`;
+                      const formattedDate = `${dateObj.getDate().toString().padStart(2, '0')}/${(dateObj.getMonth() + 1).toString().padStart(2, '0')}`;
                       return (
                         <div key={dateEntry.specificDateKey} className="grid grid-cols-[auto_1fr_1fr] items-center gap-x-2 gap-y-1 text-sm">
                           <span className="font-medium w-12 text-right pr-1">{formattedDate}:</span>
@@ -347,7 +361,7 @@ export function FieldServiceAssignmentsCard({
           </div>
         ))}
       </CardContent>
-      <ManageFieldServiceListsDialog 
+      <ManageFieldServiceDialog
         isOpen={isManageListsDialogOpen}
         onOpenChange={setIsManageListsDialogOpen}
         onListsUpdated={loadManagedLists}

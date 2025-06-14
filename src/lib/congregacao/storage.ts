@@ -11,6 +11,7 @@ import type {
   AllFieldServiceAssignments,
   FieldServiceMonthlyData,
   ManagedListItem,
+  FieldServiceWeeklyTemplate,
   DesignacaoSalva,
   TodosCronogramasSalvos,
 } from './types';
@@ -22,6 +23,7 @@ import {
   LOCAL_STORAGE_KEY_FIELD_SERVICE_ASSIGNMENTS,
   LOCAL_STORAGE_KEY_FIELD_SERVICE_MODALITIES,
   LOCAL_STORAGE_KEY_FIELD_SERVICE_LOCATIONS,
+  LOCAL_STORAGE_KEY_FIELD_SERVICE_TEMPLATE,
   LOCAL_STORAGE_KEY_USER_SCHEDULE,
 } from './constants';
 import { validarEstruturaMembro } from './utils';
@@ -367,6 +369,45 @@ export async function limparFieldServiceAssignmentsFirestore(): Promise<void> {
   const col = collection(db, 'field_service');
   const snapshot = await getDocs(col);
   await Promise.all(snapshot.docs.map(d => deleteDoc(d.ref)));
+}
+
+// --- Template Semanal do Serviço de Campo ---
+export function carregarFieldServiceTemplate(): FieldServiceWeeklyTemplate | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const dadosSalvos = localStorage.getItem(LOCAL_STORAGE_KEY_FIELD_SERVICE_TEMPLATE);
+    if (dadosSalvos) {
+      const parsedData = JSON.parse(dadosSalvos) as FieldServiceWeeklyTemplate;
+      if (parsedData && typeof parsedData === 'object') {
+        return parsedData;
+      } else {
+        console.warn('Template de Serviço de Campo com estrutura inválida. Limpando.');
+        localStorage.removeItem(LOCAL_STORAGE_KEY_FIELD_SERVICE_TEMPLATE);
+        return null;
+      }
+    }
+  } catch (error) {
+    console.error('Erro ao carregar template do Serviço de Campo:', error);
+  }
+  return null;
+}
+
+export function salvarFieldServiceTemplate(data: FieldServiceWeeklyTemplate): void {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(LOCAL_STORAGE_KEY_FIELD_SERVICE_TEMPLATE, JSON.stringify(data));
+  } catch (error) {
+    console.error('Erro ao salvar template do Serviço de Campo:', error);
+  }
+}
+
+export function limparFieldServiceTemplate(): void {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.removeItem(LOCAL_STORAGE_KEY_FIELD_SERVICE_TEMPLATE);
+  } catch (error) {
+    console.error('Erro ao limpar template do Serviço de Campo:', error);
+  }
 }
 
 // Funções para listas gerenciadas do Serviço de Campo (Modalidades e Locais Base)

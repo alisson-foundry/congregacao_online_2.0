@@ -62,6 +62,7 @@ export const LOCAL_STORAGE_KEY_NVMC_ASSIGNMENTS = 'congregacao_nvmc_assignments'
 export const LOCAL_STORAGE_KEY_FIELD_SERVICE_ASSIGNMENTS = 'congregacao_field_service_assignments';
 export const LOCAL_STORAGE_KEY_FIELD_SERVICE_MODALITIES = 'congregacao_field_service_modalities';
 export const LOCAL_STORAGE_KEY_FIELD_SERVICE_LOCATIONS = 'congregacao_field_service_locations';
+export const LOCAL_STORAGE_KEY_FIELD_SERVICE_TEMPLATE = 'congregacao_field_service_template';
 export const LOCAL_STORAGE_KEY_USER_SCHEDULE = 'congregacao_user_schedule';
 
 
@@ -129,9 +130,9 @@ export const GRUPOS_LIMPEZA_APOS_REUNIAO = [
   { id: 'grupo6', nome: 'Grupo 6 - Marco Saudo' },
 ];
 
-// Field Service Time Options (5 min intervals for 24 hours)
-export const FIELD_SERVICE_TIME_OPTIONS: { value: string; label: string }[] = Array.from({ length: 24 * (60 / 5) }, (_, i) => {
-  const totalMinutes = i * 5;
+// Field Service Time Options (15 min intervals for 24 hours)
+export const FIELD_SERVICE_TIME_OPTIONS: { value: string; label: string }[] = Array.from({ length: 24 * (60 / 15) }, (_, i) => {
+  const totalMinutes = i * 15;
   const hours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;
   const formattedTime = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
