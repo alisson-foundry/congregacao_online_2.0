@@ -20,6 +20,9 @@ import { ConfirmClearDialog, type ConfirmClearDialogProps } from '@/components/c
 // Removed CongregationIcon import
 // import { CongregationIcon } from '@/components/icons/CongregationIcon';
 
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+
 import type { Membro } from '@/lib/congregacao/types'; // Kept Membro type
 // Removed other type imports
 // import type { DesignacoesFeitas, SubstitutionDetails, AllNVMCAssignments, NVMCDailyAssignments, AllFieldServiceAssignments, FieldServiceMonthlyData } from '@/lib/congregacao/types';
@@ -49,6 +52,8 @@ import { Users, History, Trash2 } from 'lucide-react'; // Assuming these are use
 
 
 const MemberManagementPage = () => {
+  const { data: session, status } = useSession();
+  const router = useRouter();
   const {
     membros,
     isMemberFormOpen,
@@ -97,6 +102,15 @@ const MemberManagementPage = () => {
   // const [substitutionDetails, setSubstitutionDetails] = useState<SubstitutionDetails | null>(null);
 
   const { toast } = useToast();
+
+  if (status === 'loading') {
+    return null;
+  }
+
+  if (!(session as any)?.isAdmin) {
+    router.replace('/');
+    return null;
+  }
 
   // Removed useEffect for loading NVMC/Field Service
   // useEffect(() => {

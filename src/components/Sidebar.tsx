@@ -4,7 +4,11 @@ import Link from 'next/link';
 import { signOut } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 
-export default function Sidebar() {
+interface SidebarProps {
+  isAdmin?: boolean;
+}
+
+export default function Sidebar({ isAdmin }: SidebarProps) {
   return (
     <div className="w-64 bg-blue-900 text-white min-h-screen p-4">
       <div className="text-2xl font-bold mb-6">
@@ -17,11 +21,13 @@ export default function Sidebar() {
               Dashboard
             </Link>
           </li>
-          <li className="mb-2">
-            <Link href="/congregacao/membros" className="block py-2 px-4 rounded hover:bg-blue-700">
-              Gerenciar Membros
-            </Link>
-          </li>
+          {isAdmin && (
+            <li className="mb-2">
+              <Link href="/congregacao/membros" className="block py-2 px-4 rounded hover:bg-blue-700">
+                Gerenciar Membros
+              </Link>
+            </li>
+          )}
           <li className="mb-2">
             <Link href="/congregacao/designacoes" className="block py-2 px-4 rounded hover:bg-blue-700">
               Gerar Designações

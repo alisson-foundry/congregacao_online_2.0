@@ -28,13 +28,14 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const session = await getServerSession(authOptions);
+  const isAdmin = (session as any)?.isAdmin;
 
   return (
     <html lang="pt-BR">
       <body className={`${inter.variable} font-sans antialiased`}>
         <Providers>
           <div className="flex min-h-screen">
-            {session && <Sidebar />}
+            {session && <Sidebar isAdmin={isAdmin} />}
             <main className={`flex-1 p-6 bg-gray-100 ${!session ? 'w-full' : ''}`}>
               {children}
             </main>

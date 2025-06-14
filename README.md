@@ -18,6 +18,9 @@ To get started, take a look at src/app/page.tsx.
    cp .env.example .env.local
    ```
 
+   The `ADMIN_EMAILS` variable should contain a comma-separated list of emails
+   allowed to access admin features.
+
 3. Start the Firebase emulators in another terminal:
 
    ```bash

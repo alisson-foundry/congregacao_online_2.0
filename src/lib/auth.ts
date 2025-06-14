@@ -1,6 +1,11 @@
 import { NextAuthOptions } from 'next-auth';
 import GoogleProvider from 'next-auth/providers/google';
 
+const ADMIN_EMAILS = (process.env.ADMIN_EMAILS ?? '')
+  .split(',')
+  .map((e) => e.trim())
+  .filter(Boolean);
+
 export const authOptions: NextAuthOptions = {
   providers: [
     GoogleProvider({
@@ -13,13 +18,16 @@ export const authOptions: NextAuthOptions = {
   },
   callbacks: {
     async session({ session, token }) {
+      (session as any).isAdmin = Boolean(token.isAdmin);
       return session;
     },
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
+        token.email = user.email;
       }
+      token.isAdmin = ADMIN_EMAILS.includes(String(token.email));
       return token;
     },
   },
-}; 
+};
