@@ -21,6 +21,7 @@ export const DIAS_REUNIAO: DiasReuniao = {
 export const PERMISSOES_BASE: PermissaoBase[] = [
   { id: 'indicadorQui', nome: 'Indicador Quinta', grupo: 'Indicadores' },
   { id: 'indicadorDom', nome: 'Indicador Domingo', grupo: 'Indicadores' },
+  { id: 'indicadorZoom', nome: 'Indicador Zoom', grupo: 'Indicadores' },
   { id: 'volanteQui', nome: 'Volante Quinta', grupo: 'Volantes' },
   { id: 'volanteDom', nome: 'Volante Domingo', grupo: 'Volantes' },
   { id: 'leitorQui', nome: 'Leitor Quinta', grupo: 'Leitura/Presidência' },
@@ -45,9 +46,9 @@ export const FUNCOES_DESIGNADAS: FuncaoDesignada[] = [
   { id: 'leitorDom', nome: 'Leitor A Sentinela (Dom)', tipoReuniao: ['publica'], tabela: 'LeitorPresidente', permissaoRequeridaBase: 'leitorDom' },
   // Áudio/Vídeo
   { id: 'avQui', nome: 'Áudio/Vídeo', tipoReuniao: ['meioSemana'], tabela: 'AV', permissaoRequeridaBase: 'av' },
-  { id: 'indicadorZoomQui', nome: 'Indicador Zoom', tipoReuniao: ['meioSemana'], tabela: 'AV', permissaoRequeridaBase: 'av' },
+  { id: 'indicadorZoomQui', nome: 'Indicador Zoom', tipoReuniao: ['meioSemana'], tabela: 'AV', permissaoRequeridaBase: 'indicadorZoom' },
   { id: 'avDom', nome: 'Áudio/Vídeo', tipoReuniao: ['publica'], tabela: 'AV', permissaoRequeridaBase: 'av' },
-  { id: 'indicadorZoomDom', nome: 'Indicador Zoom', tipoReuniao: ['publica'], tabela: 'AV', permissaoRequeridaBase: 'av' },
+  { id: 'indicadorZoomDom', nome: 'Indicador Zoom', tipoReuniao: ['publica'], tabela: 'AV', permissaoRequeridaBase: 'indicadorZoom' },
 ];
 
 export const TIPOS_DESIGNACAO: Record<string, string> = FUNCOES_DESIGNADAS.reduce((acc: Record<string, string>, funcao) => {
