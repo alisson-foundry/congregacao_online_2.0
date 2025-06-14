@@ -2,6 +2,8 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { onAuthStateChanged } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
 import type { Membro } from '@/lib/congregacao/types';
 import {
   carregarMembrosLocalmente,
@@ -24,12 +26,20 @@ export function useMemberManagement() {
   const { toast } = useToast();
 
   useEffect(() => {
-    carregarMembrosFirestore()
-      .then(setMembros)
-      .catch(err => {
-        console.error('Erro ao carregar membros do Firestore:', err);
+    const unsubscribe = onAuthStateChanged(auth, user => {
+      if (user) {
+        carregarMembrosFirestore()
+          .then(setMembros)
+          .catch(err => {
+            console.error('Erro ao carregar membros do Firestore:', err);
+            setMembros(carregarMembrosLocalmente());
+          });
+      } else {
         setMembros(carregarMembrosLocalmente());
-      });
+      }
+      unsubscribe();
+    });
+    return () => unsubscribe();
   }, []);
 
   const persistMembros = useCallback(async (novosMembros: Membro[]) => {
