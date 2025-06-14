@@ -102,13 +102,13 @@ const MemberManagementPage = () => {
   // const [substitutionDetails, setSubstitutionDetails] = useState<SubstitutionDetails | null>(null);
 
   const { toast } = useToast();
+  useEffect(() => {
+    if (status !== 'loading' && !(session as any)?.isAdmin) {
+      router.replace('/');
+    }
+  }, [status, session, router]);
 
-  if (status === 'loading') {
-    return null;
-  }
-
-  if (!(session as any)?.isAdmin) {
-    router.replace('/');
+  if (status === 'loading' || !(session as any)?.isAdmin) {
     return null;
   }
 
