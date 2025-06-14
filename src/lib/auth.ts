@@ -19,12 +19,16 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async session({ session, token }) {
       (session as any).isAdmin = Boolean(token.isAdmin);
+      (session as any).firebaseIdToken = token.firebaseIdToken;
       return session;
     },
-    async jwt({ token, user }) {
+    async jwt({ token, user, account }) {
       if (user) {
         token.id = user.id;
         token.email = user.email;
+      }
+      if (account) {
+        token.firebaseIdToken = (account as any).id_token;
       }
       token.isAdmin = ADMIN_EMAILS.includes(String(token.email));
       return token;
