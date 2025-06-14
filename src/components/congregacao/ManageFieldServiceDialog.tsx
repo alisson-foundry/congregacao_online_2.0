@@ -16,6 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { PlusCircle, Trash2, Settings } from 'lucide-react';
+import { FieldServiceTemplateCard } from './FieldServiceTemplateCard';
 import type { ManagedListItem } from '@/lib/congregacao/types';
 import { 
   carregarModalidades, 
@@ -25,7 +26,7 @@ import {
 } from '@/lib/congregacao/storage';
 import { useToast } from "@/hooks/use-toast";
 
-interface ManageFieldServiceListsDialogProps {
+interface ManageFieldServiceDialogProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
   // Callback for when lists are updated, so parent can refresh if needed
@@ -34,11 +35,11 @@ interface ManageFieldServiceListsDialogProps {
 
 const generateListItemId = () => `item_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 
-export function ManageFieldServiceListsDialog({ 
-  isOpen, 
+export function ManageFieldServiceDialog({
+  isOpen,
   onOpenChange,
-  onListsUpdated 
-}: ManageFieldServiceListsDialogProps) {
+  onListsUpdated
+}: ManageFieldServiceDialogProps) {
   const [modalidades, setModalidades] = useState<ManagedListItem[]>([]);
   const [locaisBase, setLocaisBase] = useState<ManagedListItem[]>([]);
   const [newModalidadeName, setNewModalidadeName] = useState('');
@@ -98,14 +99,17 @@ export function ManageFieldServiceListsDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center">
             <Settings className="mr-2 h-5 w-5 text-primary" />
-            Gerenciar Listas do Serviço de Campo
+            Gerir Saídas do Serviço de Campo
           </DialogTitle>
           <DialogDescription>
-            Adicione ou remova modalidades e locais base para os pontos de encontro do serviço de campo.
+            Configure saídas recorrentes, modalidades e locais base do serviço de campo.
           </DialogDescription>
         </DialogHeader>
         
-        <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-6 overflow-y-auto py-4 px-1">
+        <div className="flex-1 overflow-y-auto space-y-6 py-4 px-1">
+          <FieldServiceTemplateCard />
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Seção de Modalidades */}
           <div className="space-y-4 p-3 border rounded-lg shadow-sm flex flex-col">
             <h3 className="text-lg font-semibold text-primary">Modalidades</h3>
@@ -181,6 +185,7 @@ export function ManageFieldServiceListsDialog({
               </div>
             </ScrollArea>
           </div>
+        </div>
         </div>
 
         <DialogFooter className="mt-auto pt-4 border-t">

@@ -34,6 +34,7 @@ To get started, take a look at src/app/page.tsx.
 
 ## Novidade
 
-Agora existe a página `/congregacao/horarios-padrao` onde é possível configurar
-uma grade semanal de pontos de encontro do serviço de campo. Esse template é
-usado ao criar as designações mensais.
+Na tela de designações há um botão **Gerir Saídas**. Nele é possível cadastrar
+uma grade semanal de pontos de encontro do serviço de campo, além de manter as
+listas de modalidades e locais base. Ao selecionar um mês, as saídas cadastradas
+são carregadas automaticamente; basta designar os dirigentes.

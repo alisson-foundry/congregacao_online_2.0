@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Separator } from '@/components/ui/separator';
 import { ClipboardList, PlusCircle, Trash2, Settings2 } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
-import { ManageFieldServiceListsDialog } from './ManageFieldServiceListsDialog';
+import { ManageFieldServiceDialog } from './ManageFieldServiceDialog';
 import { carregarModalidades, carregarLocaisBase, carregarFieldServiceTemplate } from '@/lib/congregacao/storage';
 
 
@@ -233,12 +233,12 @@ export function FieldServiceAssignmentsCard({
           <Button onClick={handleSaveChanges} className="w-full sm:w-auto whitespace-nowrap">
             Salvar Designações de Campo
           </Button>
-           <Button 
-            variant="outline" 
-            onClick={() => setIsManageListsDialogOpen(true)} 
+          <Button
+            variant="outline"
+            onClick={() => setIsManageListsDialogOpen(true)}
             className="w-full sm:w-auto whitespace-nowrap"
           >
-            <Settings2 className="mr-2 h-4 w-4" /> Gerenciar Listas
+            <Settings2 className="mr-2 h-4 w-4" /> Gerir Saídas
           </Button>
         </div>
 
@@ -355,7 +355,7 @@ export function FieldServiceAssignmentsCard({
           </div>
         ))}
       </CardContent>
-      <ManageFieldServiceListsDialog 
+      <ManageFieldServiceDialog
         isOpen={isManageListsDialogOpen}
         onOpenChange={setIsManageListsDialogOpen}
         onListsUpdated={loadManagedLists}

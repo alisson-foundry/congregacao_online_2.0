@@ -8,16 +8,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { PlusCircle, Trash2, Settings2, ClipboardList } from 'lucide-react';
+import { PlusCircle, Trash2, ClipboardList } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
-import { ManageFieldServiceListsDialog } from './ManageFieldServiceListsDialog';
 import { carregarModalidades, carregarLocaisBase, carregarFieldServiceTemplate, salvarFieldServiceTemplate } from '@/lib/congregacao/storage';
 
 const generateSlotId = () => `slot_${Date.now()}_${Math.random().toString(36).substring(2,9)}`;
 
 export function FieldServiceTemplateCard() {
   const [templateData, setTemplateData] = useState<FieldServiceWeeklyTemplate>({});
-  const [isManageListsDialogOpen, setIsManageListsDialogOpen] = useState(false);
   const [modalidadesList, setModalidadesList] = useState<ManagedListItem[]>([]);
   const [locaisBaseList, setLocaisBaseList] = useState<ManagedListItem[]>([]);
   const { toast } = useToast();
@@ -90,9 +88,6 @@ export function FieldServiceTemplateCard() {
       <CardContent className="space-y-6">
         <div className="flex justify-end gap-2">
           <Button onClick={handleSaveTemplate}>Salvar Horários</Button>
-          <Button variant="outline" onClick={() => setIsManageListsDialogOpen(true)}>
-            <Settings2 className="mr-2 h-4 w-4" /> Gerenciar Listas
-          </Button>
         </div>
         {NOMES_DIAS_SEMANA_COMPLETOS.map((dayName, dayIndex) => (
           <div key={dayIndex} className="space-y-4 p-4 border rounded-lg shadow-sm">
@@ -167,7 +162,6 @@ export function FieldServiceTemplateCard() {
           </div>
         ))}
       </CardContent>
-      <ManageFieldServiceListsDialog isOpen={isManageListsDialogOpen} onOpenChange={setIsManageListsDialogOpen} onListsUpdated={loadManagedLists} />
     </Card>
   );
 }
