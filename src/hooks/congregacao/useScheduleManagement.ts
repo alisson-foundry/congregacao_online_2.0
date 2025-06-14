@@ -13,6 +13,7 @@ import {
   salvarTodosCronogramasFirestore
 } from '@/lib/congregacao/storage';
 import { calcularDesignacoesAction } from '@/lib/congregacao/assignment-logic';
+import { FUNCOES_DESIGNADAS } from '@/lib/congregacao/constants';
 
 interface UseScheduleManagementProps {
   membros: Membro[];
@@ -55,15 +56,17 @@ export function useScheduleManagement({ membros, updateMemberHistory }: UseSched
   const internalUpdateMemberHistoryForMonth = useCallback((
     currentScheduleForMonth: DesignacoesFeitas,
     scheduleMes: number,
-    scheduleAno: number
+    scheduleAno: number,
+    tabela?: 'Indicadores' | 'Volantes' | 'AV'
   ) => {
+    const relevantFunctions = tabela ? FUNCOES_DESIGNADAS.filter(f => f.tabela === tabela).map(f => f.id) : FUNCOES_DESIGNADAS.filter(f => !f.id.startsWith("av") && !f.id.startsWith("limpeza")).map(f => f.id);
     const membrosComHistoricoAtualizado = [...membros].map(m => {
       const membroModificado = { ...m, historicoDesignacoes: { ...m.historicoDesignacoes } };
       Object.keys(membroModificado.historicoDesignacoes).forEach(histDateStr => {
         const histDateObj = new Date(histDateStr);
         if (histDateObj.getFullYear() === scheduleAno && histDateObj.getMonth() === scheduleMes) {
           const funcaoIdNoHistorico = membroModificado.historicoDesignacoes[histDateStr];
-          if (funcaoIdNoHistorico && !funcaoIdNoHistorico.startsWith('av') && !funcaoIdNoHistorico.startsWith('limpeza')) {
+          if (relevantFunctions.includes(funcaoIdNoHistorico)) {
              delete membroModificado.historicoDesignacoes[histDateStr];
           }
         }
@@ -73,7 +76,7 @@ export function useScheduleManagement({ membros, updateMemberHistory }: UseSched
         if (dataObj.getFullYear() === scheduleAno && dataObj.getMonth() === scheduleMes) {
           Object.entries(funcoesDoDia).forEach(([funcaoId, membroId]) => {
             if (membroId === m.id) {
-              if (!funcaoId.startsWith('av') && !funcaoId.startsWith('limpeza')) {
+              if (relevantFunctions.includes(funcaoId)) {
                 membroModificado.historicoDesignacoes[dateStr] = funcaoId;
               }
             }
@@ -86,16 +89,39 @@ export function useScheduleManagement({ membros, updateMemberHistory }: UseSched
   }, [membros, updateMemberHistory]);
 
 
-  const generateNewSchedule = useCallback(async (mes: number, ano: number): Promise<{ success: boolean; error?: string; generatedSchedule?: DesignacoesFeitas }> => {
-    const result = await calcularDesignacoesAction(mes, ano, membros);
+  const generateNewSchedule = useCallback(
+    async (
+      mes: number,
+      ano: number,
+      tabela: 'Indicadores' | 'Volantes' | 'AV'
+    ): Promise<{ success: boolean; error?: string; generatedSchedule?: DesignacoesFeitas }> => {
+    const result = await calcularDesignacoesAction(mes, ano, membros, tabela);
     if ('error' in result) {
       return { success: false, error: result.error };
     }
-    // Ao gerar novo, o status é 'rascunho'
-    persistScheduleToStateAndCache(result.designacoesFeitas, mes, ano, 'rascunho');
-    internalUpdateMemberHistoryForMonth(result.designacoesFeitas, mes, ano);
-    return { success: true, generatedSchedule: result.designacoesFeitas };
-  }, [membros, persistScheduleToStateAndCache, internalUpdateMemberHistoryForMonth]);
+
+    const newAssignments = result.designacoesFeitas;
+    const mergedSchedule: DesignacoesFeitas = scheduleState.designacoes && scheduleState.mes === mes && scheduleState.ano === ano
+      ? JSON.parse(JSON.stringify(scheduleState.designacoes))
+      : {};
+
+    const relevantFunctions = FUNCOES_DESIGNADAS.filter(f => f.tabela === tabela).map(f => f.id);
+    Object.entries(newAssignments).forEach(([dateStr, assignments]) => {
+      if (!mergedSchedule[dateStr]) mergedSchedule[dateStr] = { ...scheduleState.designacoes?.[dateStr] } as any;
+      Object.entries(assignments).forEach(([funcId, memberId]) => {
+        if (relevantFunctions.includes(funcId)) {
+          mergedSchedule[dateStr][funcId] = memberId;
+        }
+      });
+    });
+
+    persistScheduleToStateAndCache(mergedSchedule, mes, ano, 'rascunho');
+    if (tabela !== 'AV') {
+      internalUpdateMemberHistoryForMonth(newAssignments, mes, ano, tabela);
+    }
+
+    return { success: true, generatedSchedule: mergedSchedule };
+  }, [membros, scheduleState, persistScheduleToStateAndCache, internalUpdateMemberHistoryForMonth]);
 
   const confirmManualAssignmentOrSubstitution = useCallback((
     date: string,

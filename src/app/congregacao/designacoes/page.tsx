@@ -79,8 +79,12 @@ export default function DesignacoesPage() {
       });
   }, []);
 
-  const handleScheduleGeneratedCallback = async (mes: number, ano: number) => {
-    const { success, error, generatedSchedule } = await scheduleManagement.generateNewSchedule(mes, ano);
+  const handleScheduleGeneratedCallback = async (
+    mes: number,
+    ano: number,
+    tabela: 'Indicadores' | 'Volantes' | 'AV'
+  ) => {
+    const { success, error, generatedSchedule } = await scheduleManagement.generateNewSchedule(mes, ano, tabela);
     if (success && generatedSchedule) {
       toast({ title: "Designações Geradas", description: `Cronograma para ${NOMES_MESES[mes]} de ${ano} gerado com sucesso.` });
     } else if (error) {
