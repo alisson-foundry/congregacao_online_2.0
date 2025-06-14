@@ -67,12 +67,12 @@ export default function ConfiguracoesPage() {
      }
   };
 
-  const handleSavePassword = () => {
+  const handleSavePassword = async () => {
     if (!pwd || pwd !== confirmPwd) {
       toast({ title: 'Erro', description: 'As senhas não conferem.', variant: 'destructive' });
       return;
     }
-    setPassword(pwd);
+    await setPassword(pwd);
     setPwd('');
     setConfirmPwd('');
     toast({ title: 'Sucesso', description: 'Senha atualizada.' });

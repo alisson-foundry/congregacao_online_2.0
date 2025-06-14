@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import {
   carregarAdminPassword,
   salvarAdminPassword,
+  carregarAdminPasswordFirestore,
+  salvarAdminPasswordFirestore,
   carregarAdminAutenticado,
   salvarAdminAutenticado,
 } from '@/lib/congregacao/storage';
@@ -15,8 +17,8 @@ export function useAdminAuth() {
     setAuthenticated(carregarAdminAutenticado());
   }, []);
 
-  const checkPassword = (pwd: string): boolean => {
-    const stored = carregarAdminPassword();
+  const checkPassword = async (pwd: string): Promise<boolean> => {
+    const stored = await carregarAdminPasswordFirestore();
     const ok = stored !== null && pwd === stored;
     if (ok) {
       salvarAdminAutenticado(true);
@@ -25,7 +27,8 @@ export function useAdminAuth() {
     return ok;
   };
 
-  const setPassword = (pwd: string) => {
+  const setPassword = async (pwd: string) => {
+    await salvarAdminPasswordFirestore(pwd);
     salvarAdminPassword(pwd);
     salvarAdminAutenticado(true);
     setAuthenticated(true);

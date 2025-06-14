@@ -501,6 +501,17 @@ export function salvarAdminPassword(pwd: string): void {
   }
 }
 
+export async function carregarAdminPasswordFirestore(): Promise<string | null> {
+  const docRef = doc(collection(db, 'config'), 'admin');
+  const snapshot = await getDoc(docRef);
+  return snapshot.exists() ? (snapshot.data().password as string) : null;
+}
+
+export async function salvarAdminPasswordFirestore(pwd: string): Promise<void> {
+  const docRef = doc(collection(db, 'config'), 'admin');
+  await setDoc(docRef, { password: pwd });
+}
+
 export function carregarAdminAutenticado(): boolean {
   if (typeof window === 'undefined') return false;
   try {

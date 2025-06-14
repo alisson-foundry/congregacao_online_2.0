@@ -42,3 +42,4 @@ são carregadas automaticamente; basta designar os dirigentes.
 ## Senha Administrativa
 
 Em **Configurações** é possível definir a senha de administrador. Ela será solicitada ao acessar a opção **Gerenciar Membros** no menu lateral.
+A senha fica armazenada no Firestore, sendo compartilhada entre todos os usuários.

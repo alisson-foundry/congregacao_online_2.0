@@ -26,8 +26,8 @@ export function AdminPasswordDialog({ isOpen, onOpenChange, onSuccess }: AdminPa
   const [password, setPassword] = useState('');
   const [error, setError] = useState(false);
 
-  const handleConfirm = () => {
-    if (checkPassword(password)) {
+  const handleConfirm = async () => {
+    if (await checkPassword(password)) {
       setPassword('');
       setError(false);
       onOpenChange(false);
