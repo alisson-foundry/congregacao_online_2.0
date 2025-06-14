@@ -1,7 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import { useState } from 'react';
+import { useAdminAuth } from '@/hooks/use-admin-auth';
+import { AdminPasswordDialog } from '@/components/congregacao/AdminPasswordDialog';
 import { cn } from '@/lib/utils';
 import { 
   Users, 
@@ -36,6 +39,16 @@ const menuItems = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const { authenticated } = useAdminAuth();
+  const [pwdDialogOpen, setPwdDialogOpen] = useState(false);
+
+  const handleMembersClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    if (!authenticated) {
+      e.preventDefault();
+      setPwdDialogOpen(true);
+    }
+  };
 
   return (
     <div className="flex flex-col h-full bg-[#2B3A67] border-r border-[#2B3A67]">
@@ -45,10 +58,13 @@ export function Sidebar() {
       <nav className="flex-1 px-4 space-y-1">
         {menuItems.map((item) => {
           const isActive = pathname === item.href;
+          const handleClick =
+            item.href === '/congregacao/membros' ? handleMembersClick : undefined;
           return (
             <Link
               key={item.href}
               href={item.href}
+              onClick={handleClick}
               className={cn(
                 'flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors',
                 isActive
@@ -62,6 +78,12 @@ export function Sidebar() {
           );
         })}
       </nav>
+      <AdminPasswordDialog
+        isOpen={pwdDialogOpen}
+        onOpenChange={setPwdDialogOpen}
+        onSuccess={() => router.push('/congregacao/membros')}
+      />
     </div>
   );
-} 
+}
+

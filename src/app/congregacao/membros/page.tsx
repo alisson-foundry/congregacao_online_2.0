@@ -15,6 +15,8 @@ import { MemberManagementCard, type MemberManagementCardProps } from '@/componen
 import { MemberFormDialog } from '@/components/congregacao/MemberFormDialog';
 import { BulkAddDialog } from '@/components/congregacao/BulkAddDialog';
 import { ConfirmClearDialog, type ConfirmClearDialogProps } from '@/components/congregacao/ConfirmClearDialog';
+import { AdminPasswordDialog } from '@/components/congregacao/AdminPasswordDialog';
+import { useAdminAuth } from '@/hooks/use-admin-auth';
 // Removed SubstitutionDialog import
 // import { SubstitutionDialog } from '@/components/congregacao/SubstitutionDialog';
 // Removed CongregationIcon import
@@ -49,6 +51,18 @@ import { Users, History, Trash2 } from 'lucide-react'; // Assuming these are use
 
 
 const MemberManagementPage = () => {
+  const { authenticated } = useAdminAuth();
+  const [pwdOpen, setPwdOpen] = useState(!authenticated);
+
+  if (!authenticated) {
+    return (
+      <AdminPasswordDialog
+        isOpen={pwdOpen}
+        onOpenChange={setPwdOpen}
+        onSuccess={() => setPwdOpen(false)}
+      />
+    );
+  }
   const {
     membros,
     isMemberFormOpen,

@@ -38,3 +38,7 @@ Na tela de designações há um botão **Gerir Saídas**. Nele é possível cada
 uma grade semanal de pontos de encontro do serviço de campo, além de manter as
 listas de modalidades e locais base. Ao selecionar um mês, as saídas cadastradas
 são carregadas automaticamente; basta designar os dirigentes.
+
+## Senha Administrativa
+
+Em **Configurações** é possível definir a senha de administrador. Ela será solicitada ao acessar a opção **Gerenciar Membros** no menu lateral.

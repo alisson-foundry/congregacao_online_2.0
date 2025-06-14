@@ -65,6 +65,8 @@ export const LOCAL_STORAGE_KEY_FIELD_SERVICE_MODALITIES = 'congregacao_field_ser
 export const LOCAL_STORAGE_KEY_FIELD_SERVICE_LOCATIONS = 'congregacao_field_service_locations';
 export const LOCAL_STORAGE_KEY_FIELD_SERVICE_TEMPLATE = 'congregacao_field_service_template';
 export const LOCAL_STORAGE_KEY_USER_SCHEDULE = 'congregacao_user_schedule';
+export const LOCAL_STORAGE_KEY_ADMIN_PASSWORD = 'congregacao_admin_password';
+export const LOCAL_STORAGE_KEY_ADMIN_AUTH = 'congregacao_admin_authenticated';
 
 
 export const BADGE_COLORS: Record<string, string> = {

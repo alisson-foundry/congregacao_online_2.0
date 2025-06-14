@@ -25,6 +25,8 @@ import {
   LOCAL_STORAGE_KEY_FIELD_SERVICE_LOCATIONS,
   LOCAL_STORAGE_KEY_FIELD_SERVICE_TEMPLATE,
   LOCAL_STORAGE_KEY_USER_SCHEDULE,
+  LOCAL_STORAGE_KEY_ADMIN_PASSWORD,
+  LOCAL_STORAGE_KEY_ADMIN_AUTH,
 } from './constants';
 import { validarEstruturaMembro } from './utils';
 import { collection, getDocs, setDoc, doc, deleteDoc, getDoc } from 'firebase/firestore';
@@ -477,4 +479,43 @@ export function salvarLocaisBase(items: ManagedListItem[]): void {
 export function limparLocaisBase(): void {
   if (typeof window === 'undefined') return;
   localStorage.removeItem(LOCAL_STORAGE_KEY_FIELD_SERVICE_LOCATIONS);
+}
+
+// --- Admin Authentication ---
+export function carregarAdminPassword(): string | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    return localStorage.getItem(LOCAL_STORAGE_KEY_ADMIN_PASSWORD);
+  } catch (error) {
+    console.error('Erro ao carregar senha admin:', error);
+    return null;
+  }
+}
+
+export function salvarAdminPassword(pwd: string): void {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(LOCAL_STORAGE_KEY_ADMIN_PASSWORD, pwd);
+  } catch (error) {
+    console.error('Erro ao salvar senha admin:', error);
+  }
+}
+
+export function carregarAdminAutenticado(): boolean {
+  if (typeof window === 'undefined') return false;
+  try {
+    return localStorage.getItem(LOCAL_STORAGE_KEY_ADMIN_AUTH) === 'true';
+  } catch (error) {
+    console.error('Erro ao verificar autenticação admin:', error);
+    return false;
+  }
+}
+
+export function salvarAdminAutenticado(flag: boolean): void {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(LOCAL_STORAGE_KEY_ADMIN_AUTH, flag ? 'true' : 'false');
+  } catch (error) {
+    console.error('Erro ao definir autenticação admin:', error);
+  }
 }

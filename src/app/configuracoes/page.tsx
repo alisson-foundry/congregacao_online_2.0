@@ -24,6 +24,8 @@ import { ConfirmClearDialog, type ConfirmClearDialogProps } from '@/components/c
 import type { Membro } from '@/lib/congregacao/types';
 import { Label } from '@/components/ui/label';
 import { NOMES_MESES } from '@/lib/congregacao/constants';
+import { Input } from '@/components/ui/input';
+import { useAdminAuth } from '@/hooks/use-admin-auth';
 
 export default function ConfiguracoesPage() {
   const { toast } = useToast();
@@ -36,6 +38,10 @@ export default function ConfiguracoesPage() {
   const scheduleManagement = useScheduleManagement({ membros, updateMemberHistory: () => {} }); // Pass dummy updateMemberHistory
   const { clearPublicAssignments } = usePublicMeetingAssignments();
   const { scheduleMes, scheduleAno, clearScheduleForMonth } = scheduleManagement;
+
+  const { setPassword } = useAdminAuth();
+  const [pwd, setPwd] = useState('');
+  const [confirmPwd, setConfirmPwd] = useState('');
 
   // State for confirmation dialog
   const [isConfirmClearOpen, setIsConfirmClearOpen] = useState(false);
@@ -59,6 +65,17 @@ export default function ConfiguracoesPage() {
      } else {
          toast({ title: "Erro", description: "Função de limpeza não disponível.", variant: "destructive" });
      }
+  };
+
+  const handleSavePassword = () => {
+    if (!pwd || pwd !== confirmPwd) {
+      toast({ title: 'Erro', description: 'As senhas não conferem.', variant: 'destructive' });
+      return;
+    }
+    setPassword(pwd);
+    setPwd('');
+    setConfirmPwd('');
+    toast({ title: 'Sucesso', description: 'Senha atualizada.' });
   };
 
   return (
@@ -143,6 +160,24 @@ export default function ConfiguracoesPage() {
               Limpar TODOS os Dados
             </Button>
           </div>
+        </CardContent>
+      </Card>
+
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>Senha Administrativa</CardTitle>
+          <CardDescription>Defina a senha necessária para acessar Gerenciar Membros.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <Label htmlFor="admin-pwd">Senha</Label>
+            <Input id="admin-pwd" type="password" value={pwd} onChange={(e) => setPwd(e.target.value)} />
+          </div>
+          <div>
+            <Label htmlFor="admin-pwd-confirm">Confirmar Senha</Label>
+            <Input id="admin-pwd-confirm" type="password" value={confirmPwd} onChange={(e) => setConfirmPwd(e.target.value)} />
+          </div>
+          <Button onClick={handleSavePassword}>Salvar</Button>
         </CardContent>
       </Card>
 
