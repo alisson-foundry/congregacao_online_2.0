@@ -53,16 +53,6 @@ import { Users, History, Trash2 } from 'lucide-react'; // Assuming these are use
 const MemberManagementPage = () => {
   const { authenticated } = useAdminAuth();
   const [pwdOpen, setPwdOpen] = useState(!authenticated);
-
-  if (!authenticated) {
-    return (
-      <AdminPasswordDialog
-        isOpen={pwdOpen}
-        onOpenChange={setPwdOpen}
-        onSuccess={() => setPwdOpen(false)}
-      />
-    );
-  }
   const {
     membros,
     isMemberFormOpen,
@@ -80,6 +70,16 @@ const MemberManagementPage = () => {
     updateMemberHistory,
     persistMembros: hookPersistMembros,
   } = useMemberManagement();
+
+  if (!authenticated) {
+    return (
+      <AdminPasswordDialog
+        isOpen={pwdOpen}
+        onOpenChange={setPwdOpen}
+        onSuccess={() => setPwdOpen(false)}
+      />
+    );
+  }
   
   // Removed schedule management hook and related state/functions
   // const scheduleManagement = useScheduleManagement({ membros, updateMemberHistory }); 
