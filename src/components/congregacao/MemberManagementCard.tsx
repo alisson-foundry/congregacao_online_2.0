@@ -21,6 +21,7 @@ const getMemberPermissionsBadges = (member: Membro) => {
     // Shorten names
     if (p.id === 'indicadorQui') displayName = 'Ind (Qui)';
     else if (p.id === 'indicadorDom') displayName = 'Ind (Dom)';
+    else if (p.id === 'indicadorZoom') displayName = 'Zoom';
     else if (p.id === 'volanteQui') displayName = 'Vol (Qui)';
     else if (p.id === 'volanteDom') displayName = 'Vol (Dom)';
     else if (p.id === 'leitorQui') displayName = 'Lei (Qui)';
