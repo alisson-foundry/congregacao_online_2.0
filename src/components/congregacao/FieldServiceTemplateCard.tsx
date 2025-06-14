@@ -10,7 +10,15 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { PlusCircle, Trash2, ClipboardList } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
-import { carregarModalidades, carregarLocaisBase, carregarFieldServiceTemplate, salvarFieldServiceTemplate } from '@/lib/congregacao/storage';
+
+import {
+  carregarModalidades,
+  carregarLocaisBase,
+  carregarFieldServiceTemplate,
+  salvarFieldServiceTemplate,
+  carregarFieldServiceTemplateFirestore,
+  salvarFieldServiceTemplateFirestore,
+} from '@/lib/congregacao/storage';
 
 const generateSlotId = () => `slot_${Date.now()}_${Math.random().toString(36).substring(2,9)}`;
 
@@ -27,10 +35,21 @@ export function FieldServiceTemplateCard() {
 
   useEffect(() => { loadManagedLists(); }, [loadManagedLists]);
 
-  useEffect(() => {
-    const loaded = carregarFieldServiceTemplate();
-    if (loaded) setTemplateData(loaded);
-  }, []);
+
+useEffect(() => {
+  async function loadTemplate() {
+    const fromDb = await carregarFieldServiceTemplateFirestore();
+    if (fromDb) {
+      setTemplateData(fromDb);
+      salvarFieldServiceTemplate(fromDb);
+    } else {
+      const local = carregarFieldServiceTemplate();
+      if (local) setTemplateData(local);
+    }
+  }
+  loadTemplate();
+}, []);
+
 
   const handleAddSlot = (dayOfWeek: number) => {
     const dayKey = dayOfWeek.toString();
@@ -72,10 +91,18 @@ export function FieldServiceTemplateCard() {
     }));
   };
 
-  const handleSaveTemplate = () => {
-    salvarFieldServiceTemplate(templateData);
-    toast({ title: 'Sucesso', description: 'Horários Padrão salvos.' });
-  };
+
+const handleSaveTemplate = () => {
+  salvarFieldServiceTemplate(templateData);
+  salvarFieldServiceTemplateFirestore(templateData)
+    .then(() => {
+      toast({ title: 'Sucesso', description: 'Horários Padrão salvos.' });
+    })
+    .catch(() => {
+      toast({ title: 'Erro', description: 'Falha ao salvar no banco de dados.', variant: 'destructive' });
+    });
+};
+
 
   return (
     <Card>

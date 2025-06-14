@@ -27,7 +27,7 @@ import {
   LOCAL_STORAGE_KEY_USER_SCHEDULE,
 } from './constants';
 import { validarEstruturaMembro } from './utils';
-import { collection, getDocs, setDoc, doc, deleteDoc } from 'firebase/firestore';
+import { collection, getDocs, setDoc, doc, deleteDoc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 
 export function carregarMembrosLocalmente(): Membro[] {
@@ -409,6 +409,24 @@ export function limparFieldServiceTemplate(): void {
     console.error('Erro ao limpar template do Serviço de Campo:', error);
   }
 }
+
+
+export async function carregarFieldServiceTemplateFirestore(): Promise<FieldServiceWeeklyTemplate | null> {
+  const docRef = doc(collection(db, 'field_service_template'), 'weekly');
+  const snapshot = await getDoc(docRef);
+  return snapshot.exists() ? (snapshot.data() as FieldServiceWeeklyTemplate) : null;
+}
+
+export async function salvarFieldServiceTemplateFirestore(data: FieldServiceWeeklyTemplate): Promise<void> {
+  const docRef = doc(collection(db, 'field_service_template'), 'weekly');
+  await setDoc(docRef, data);
+}
+
+export async function limparFieldServiceTemplateFirestore(): Promise<void> {
+  const docRef = doc(collection(db, 'field_service_template'), 'weekly');
+  await deleteDoc(docRef);
+}
+
 
 // Funções para listas gerenciadas do Serviço de Campo (Modalidades e Locais Base)
 function carregarManagedList(key: string): ManagedListItem[] {
