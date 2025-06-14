@@ -25,7 +25,11 @@ interface AVSelectionContext {
 
 interface ScheduleGenerationCardProps {
   membros: Membro[];
-  onScheduleGenerated: (mes: number, ano: number) => Promise<{ success: boolean; error?: string; generatedSchedule?: DesignacoesFeitas }>;
+  onScheduleGenerated: (
+    mes: number,
+    ano: number,
+    tabela: 'Indicadores' | 'Volantes' | 'AV'
+  ) => Promise<{ success: boolean; error?: string; generatedSchedule?: DesignacoesFeitas }>;
   currentSchedule: DesignacoesFeitas | null;
   currentMes: number | null;
   currentAno: number | null;
@@ -158,12 +162,12 @@ export function ScheduleGenerationCard({
     return true;
   }, [currentSchedule, status, currentMes, currentAno]);
 
-  const handleGenerateSchedule = async () => {
+  const handleGenerateSchedule = async (tabela: 'Indicadores' | 'Volantes' | 'AV') => {
     setIsLoading(true);
     setError(null);
     try {
-      console.log('[DIAGNÓSTICO] Chamando onScheduleGenerated para mês:', selectedMes, 'ano:', selectedAno);
-      const result = await onScheduleGenerated(parseInt(selectedMes, 10), parseInt(selectedAno, 10));
+      console.log('[DIAGNÓSTICO] Chamando onScheduleGenerated para mês:', selectedMes, 'ano:', selectedAno, 'tabela:', tabela);
+      const result = await onScheduleGenerated(parseInt(selectedMes, 10), parseInt(selectedAno, 10), tabela);
       console.log('[DIAGNÓSTICO] Resultado de onScheduleGenerated:', result);
       if (result.success) {
         console.log('[DIAGNÓSTICO] Estado atualizado com schedule:', result.generatedSchedule);
@@ -257,14 +261,28 @@ export function ScheduleGenerationCard({
           >
             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Gerar PDF'}
           </Button>
-           <Button
-             onClick={handleGenerateSchedule}
-             disabled={isLoading || status === 'rascunho' || status === 'finalizado'}
-             className="w-full sm:w-auto"
-           >
-             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Gerar Cronograma (Indicadores/Volantes/AV)'}
-           </Button>
-           {/* New Clear Month Button */}
+          <Button
+            onClick={() => handleGenerateSchedule('Indicadores')}
+            disabled={isLoading || status === 'rascunho' || status === 'finalizado'}
+            className="w-full sm:w-auto"
+          >
+            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Gerar Indicadores'}
+          </Button>
+          <Button
+            onClick={() => handleGenerateSchedule('Volantes')}
+            disabled={isLoading || status === 'rascunho' || status === 'finalizado'}
+            className="w-full sm:w-auto"
+          >
+            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Gerar Volantes'}
+          </Button>
+          <Button
+            onClick={() => handleGenerateSchedule('AV')}
+            disabled={isLoading || status === 'rascunho' || status === 'finalizado'}
+            className="w-full sm:w-auto"
+          >
+            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Gerar AV'}
+          </Button>
+          {/* New Clear Month Button */}
            
         </div>
 

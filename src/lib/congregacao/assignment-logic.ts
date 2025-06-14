@@ -263,7 +263,8 @@ export async function sortMembersByPriority(
 export async function calcularDesignacoesAction(
   mes: number, // 0-11
   ano: number,
-  membros: Membro[] 
+  membros: Membro[],
+  tabela?: 'Indicadores' | 'Volantes' | 'AV'
 ): Promise<{ designacoesFeitas: DesignacoesFeitas } | { error: string }> {
   
   const DIAS_REUNIAO: DiasReuniao = DIAS_REUNIAO_CONFIG;
@@ -300,7 +301,9 @@ export async function calcularDesignacoesAction(
     const tipoReuniaoAtual = dataReuniao.getDay() === DIAS_REUNIAO.meioSemana ? 'meioSemana' : 'publica';
     
     const funcoesParaGeracaoAutomatica = FUNCOES_DESIGNADAS.filter(
-      f => f.tipoReuniao.includes(tipoReuniaoAtual)
+      f =>
+        f.tipoReuniao.includes(tipoReuniaoAtual) &&
+        (!tabela || f.tabela === tabela)
     );
     
     const dataReuniaoAnteriorObj = encontrarDataReuniaoAnterior(dataReuniao, tipoReuniaoAtual, datasDeReuniaoNoMes, DIAS_REUNIAO);
