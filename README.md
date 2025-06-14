@@ -18,6 +18,13 @@ To get started, take a look at src/app/page.tsx.
    cp .env.example .env.local
    ```
 
+### Environment variables
+- `NEXT_PUBLIC_FIREBASE_API_KEY`, `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`, `NEXT_PUBLIC_FIREBASE_PROJECT_ID` – Firebase configuration values.
+- `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` – Google OAuth credentials.
+- `NEXTAUTH_URL` – base URL for NextAuth.
+- `NEXTAUTH_SECRET` – signs NextAuth cookies and tokens.
+
+
 3. Start the Firebase emulators in another terminal:
 
    ```bash
