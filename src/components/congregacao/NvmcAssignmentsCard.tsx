@@ -90,14 +90,14 @@ export function NvmcAssignmentsCard({
   
   const midweekMeetingDates = useMemo(() => {
     const dates: Date[] = [];
-    const firstDay = new Date(Date.UTC(displayYear, displayMonth, 1));
-    const lastDayNum = new Date(Date.UTC(displayYear, displayMonth + 1, 0)).getUTCDate();
+    const firstDay = new Date(displayYear, displayMonth, 1);
+    const lastDayNum = new Date(displayYear, displayMonth + 1, 0).getDate();
 
     for (let dayNum = 1; dayNum <= lastDayNum; dayNum++) {
-        const currentDate = new Date(Date.UTC(displayYear, displayMonth, dayNum));
-        if (currentDate.getUTCDay() === DIAS_REUNIAO.meioSemana) {
-            dates.push(currentDate);
-        }
+      const currentDate = new Date(displayYear, displayMonth, dayNum);
+      if (currentDate.getDay() === DIAS_REUNIAO.meioSemana) {
+        dates.push(currentDate);
+      }
     }
     return dates;
   }, [displayMonth, displayYear]);

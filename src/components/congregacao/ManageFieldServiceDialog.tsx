@@ -16,7 +16,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { PlusCircle, Trash2, Settings } from 'lucide-react';
-import { FieldServiceTemplateCard } from './FieldServiceTemplateCard';
+import dynamic from 'next/dynamic';
+const FieldServiceTemplateCard = dynamic(
+  () => import('./FieldServiceTemplateCard').then(mod => mod.FieldServiceTemplateCard),
+  { ssr: false, loading: () => <div className="text-sm p-4">Carregando...</div> }
+);
 import type { ManagedListItem } from '@/lib/congregacao/types';
 import { 
   carregarModalidades, 

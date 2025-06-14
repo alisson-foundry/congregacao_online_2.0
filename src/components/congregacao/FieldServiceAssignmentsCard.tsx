@@ -46,7 +46,10 @@ export function FieldServiceAssignmentsCard({
   const [locaisBaseList, setLocaisBaseList] = useState<ManagedListItem[]>([]);
 
   const currentYearValue = new Date().getFullYear();
-  const yearsForSelect = Array.from({ length: 5 }, (_, i) => currentYearValue - 2 + i);
+  const yearsForSelect = useMemo(
+    () => Array.from({ length: 5 }, (_, i) => currentYearValue - 2 + i),
+    [currentYearValue]
+  );
 
   const loadManagedLists = useCallback(() => {
     setModalidadesList(carregarModalidades());
@@ -58,23 +61,26 @@ export function FieldServiceAssignmentsCard({
   }, [loadManagedLists]);
 
 
-  const generateMeetingDatesForSlot = useCallback((dayOfWeek: number, year: number, month: number) => {
-    const dates = [];
-    const firstDay = new Date(Date.UTC(year, month, 1));
-    const lastDayNum = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
+  const generateMeetingDatesForSlot = useCallback(
+    (dayOfWeek: number, year: number, month: number) => {
+      const dates = [];
+      const firstDay = new Date(year, month, 1);
+      const lastDayNum = new Date(year, month + 1, 0).getDate();
 
-    for (let dayNum = 1; dayNum <= lastDayNum; dayNum++) {
-      const currentDate = new Date(Date.UTC(year, month, dayNum));
-      if (currentDate.getUTCDay() === dayOfWeek) {
-        dates.push({
-          specificDateKey: formatarDataCompleta(currentDate),
-          leaderName: '',
-          specialNote: '',
-        });
+      for (let dayNum = 1; dayNum <= lastDayNum; dayNum++) {
+        const currentDate = new Date(year, month, dayNum);
+        if (currentDate.getDay() === dayOfWeek) {
+          dates.push({
+            specificDateKey: formatarDataCompleta(currentDate),
+            leaderName: '',
+            specialNote: '',
+          });
+        }
       }
-    }
-    return dates;
-  }, []);
+      return dates;
+    },
+    []
+  );
 
   useEffect(() => {
     const yearMonthKey = formatarDataParaChave(new Date(displayYear, displayMonth, 1));
@@ -329,7 +335,7 @@ export function FieldServiceAssignmentsCard({
                   <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
                     {slot.assignedDates.map((dateEntry) => {
                       const dateObj = new Date(dateEntry.specificDateKey + 'T00:00:00');
-                      const formattedDate = `${dateObj.getUTCDate().toString().padStart(2, '0')}/${(dateObj.getUTCMonth() + 1).toString().padStart(2, '0')}`;
+                      const formattedDate = `${dateObj.getDate().toString().padStart(2, '0')}/${(dateObj.getMonth() + 1).toString().padStart(2, '0')}`;
                       return (
                         <div key={dateEntry.specificDateKey} className="grid grid-cols-[auto_1fr_1fr] items-center gap-x-2 gap-y-1 text-sm">
                           <span className="font-medium w-12 text-right pr-1">{formattedDate}:</span>
