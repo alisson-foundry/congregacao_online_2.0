@@ -37,6 +37,8 @@ import type { Membro } from '@/lib/congregacao/types'; // Kept Membro type
 // import { formatarDataParaChave } from '@/lib/congregacao/utils';
 
 import { useToast } from "@/hooks/use-toast";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 // Removed Accordion and Button imports
 // import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 // import { Button } from '@/components/ui/button';
@@ -48,7 +50,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Users, History, Trash2 } from 'lucide-react'; // Assuming these are used in member management
 
 
-const MemberManagementPage = () => {
+const MemberManagementPageContent = () => {
   const {
     membros,
     isMemberFormOpen,
@@ -221,4 +223,48 @@ const MemberManagementPage = () => {
   );
 };
 
-export default MemberManagementPage;
+const ProtectedMemberManagementPage = () => {
+  const [authorized, setAuthorized] = useState(false);
+  const [password, setPassword] = useState('');
+  const { toast } = useToast();
+
+  useEffect(() => {
+    const stored = sessionStorage.getItem('memberPageAuth');
+    if (stored === 'true') {
+      setAuthorized(true);
+    }
+  }, []);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (password === process.env.NEXT_PUBLIC_MEMBERS_PAGE_PASSWORD) {
+      sessionStorage.setItem('memberPageAuth', 'true');
+      setAuthorized(true);
+    } else {
+      toast({ title: 'Senha incorreta', variant: 'destructive' });
+    }
+  };
+
+  if (!authorized) {
+    return (
+      <div className="container mx-auto py-8">
+        <h1 className="text-3xl font-bold mb-6">Gerenciar Membros</h1>
+        <form onSubmit={handleSubmit} className="space-y-4 max-w-sm">
+          <Input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Senha"
+          />
+          <Button type="submit" className="w-full">
+            Entrar
+          </Button>
+        </form>
+      </div>
+    );
+  }
+
+  return <MemberManagementPageContent />;
+};
+
+export default ProtectedMemberManagementPage;
