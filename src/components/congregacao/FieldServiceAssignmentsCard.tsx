@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
-import { ClipboardList, PlusCircle, Trash2, Settings2 } from 'lucide-react';
+import { ClipboardList, PlusCircle, Trash2, Settings2, FileText } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { ManageFieldServiceDialog } from './ManageFieldServiceDialog';
 
@@ -21,6 +21,7 @@ import {
   carregarFieldServiceTemplate,
   carregarFieldServiceTemplateFirestore,
 } from '@/lib/congregacao/storage';
+import { generateFieldServicePdf } from '@/lib/congregacao/pdf-generator';
 
 interface FieldServiceAssignmentsCardProps {
   allFieldServiceAssignments: AllFieldServiceAssignments | null;
@@ -212,6 +213,33 @@ export function FieldServiceAssignmentsCard({
     onSaveFieldServiceAssignments(currentMonthData, displayMonth, displayYear);
   };
 
+  const handleExportFieldServicePDF = () => {
+    const hasData = Object.values(currentMonthData).some(day =>
+      day.slots.some(slot => slot.assignedDates.length > 0)
+    );
+    if (!hasData) {
+      toast({
+        title: 'Sem Dados',
+        description: 'Não há designações de serviço de campo para exportar.',
+        variant: 'default'
+      });
+      return;
+    }
+    try {
+      generateFieldServicePdf(
+        currentMonthData,
+        modalidadesList,
+        locaisBaseList,
+        displayMonth,
+        displayYear
+      );
+      toast({ title: 'PDF Gerado', description: 'O download do PDF deve iniciar em breve.' });
+    } catch (e: any) {
+      console.error('Erro ao gerar PDF:', e);
+      toast({ title: 'Erro ao Gerar PDF', description: e.message || 'Não foi possível gerar o PDF.', variant: 'destructive' });
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -374,6 +402,14 @@ export function FieldServiceAssignmentsCard({
             ))}
           </div>
         ))}
+        {Object.values(currentMonthData).some(day => day.slots.length > 0) && (
+          <div className="mt-8 flex justify-end">
+            <Button variant="outline" onClick={handleExportFieldServicePDF} className="w-full sm:w-auto">
+              <FileText className="mr-2 h-4 w-4" />
+              Exportar como PDF
+            </Button>
+          </div>
+        )}
       </CardContent>
       <ManageFieldServiceDialog
         isOpen={isManageListsDialogOpen}

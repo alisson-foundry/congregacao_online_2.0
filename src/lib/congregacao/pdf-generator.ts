@@ -2,7 +2,15 @@ import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
 import { format, startOfWeek } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import type { Membro, DesignacoesFeitas, PublicMeetingAssignment, NVMCDailyAssignments, NVCVidaCristaDynamicPart } from './types';
+import type {
+  Membro,
+  DesignacoesFeitas,
+  PublicMeetingAssignment,
+  NVMCDailyAssignments,
+  NVCVidaCristaDynamicPart,
+  FieldServiceMonthlyData,
+  ManagedListItem
+} from './types';
 import { NOMES_MESES, DIAS_REUNIAO, NOMES_DIAS_SEMANA_COMPLETOS, APP_NAME, FUNCOES_DESIGNADAS, GRUPOS_LIMPEZA_APOS_REUNIAO, NOMES_DIAS_SEMANA_ABREV, NONE_GROUP_ID, NVMC_PART_SECTIONS } from './constants';
 import { formatarDataCompleta, formatarDataCompleta as formatarDataParaChaveOriginal } from './utils';
 
@@ -827,6 +835,75 @@ export function generateNvmcPdf(
   });
 
   doc.save(`programacao_reuniao_${monthName.toLowerCase()}_${year}.pdf`);
+}
+
+export function generateFieldServicePdf(
+  monthData: FieldServiceMonthlyData,
+  modalidades: ManagedListItem[],
+  locaisBase: ManagedListItem[],
+  mes: number,
+  ano: number
+) {
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' });
+  const margin = 40;
+  const pageWidth = doc.internal.pageSize.getWidth();
+
+  const monthName = NOMES_MESES[mes] || 'Mês Desconhecido';
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(16);
+  doc.text(`Serviço de Campo - ${monthName} de ${ano}` , pageWidth / 2, margin, { align: 'center' });
+
+  const rows: { date: Date; row: any[] }[] = [];
+
+  const getName = (list: ManagedListItem[], id?: string | null) =>
+    list.find(i => i.id === id)?.name || '';
+
+  Object.keys(monthData).forEach(dayKey => {
+    const slots = monthData[dayKey]?.slots || [];
+    slots.forEach(slot => {
+      const modalityName = getName(modalidades, slot.modalityId || undefined);
+      const baseName = getName(locaisBase, slot.baseLocationId || undefined);
+      slot.assignedDates.forEach(dateEntry => {
+        const dateObj = new Date(dateEntry.specificDateKey + 'T00:00:00');
+        rows.push({
+          date: dateObj,
+          row: [
+            format(dateObj, 'dd/MM', { locale: ptBR }),
+            slot.time,
+            modalityName,
+            baseName,
+            dateEntry.leaderName || '',
+            dateEntry.specialNote || ''
+          ]
+        });
+      });
+    });
+  });
+
+  rows.sort((a, b) => a.date.getTime() - b.date.getTime());
+
+  doc.autoTable({
+    startY: margin + 20,
+    head: [['Data', 'Horário', 'Modalidade', 'Local Base', 'Dirigente', 'Obs.']],
+    body: rows.map(r => r.row),
+    theme: 'grid',
+    styles: {
+      font: 'helvetica',
+      fontSize: 8,
+      cellPadding: 2,
+      lineWidth: 0.1,
+      lineColor: [200, 200, 200]
+    },
+    headStyles: {
+      fillColor: [41, 128, 185],
+      textColor: [255, 255, 255],
+      fontSize: 8
+    },
+    margin: { top: margin + 20, left: margin, right: margin }
+  });
+
+  const monthNameLower = monthName.toLowerCase().replace(/ç/g, 'c').replace(/ã/g, 'a');
+  doc.save(`servico_campo_${monthNameLower}_${ano}.pdf`);
 }
 
     
